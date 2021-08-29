@@ -47,7 +47,7 @@ public class Linkingtool extends Item {
 				}
 				final BlockPos lpos = NBTUtil.getPosFromTag(comp);
 				if (controller.link(lpos)) {
-					player.sendMessage(new TextComponentTranslation("lt.linkedpos"));
+					player.sendMessage(new TextComponentTranslation("lt.linkedpos", pos.getX(), pos.getY(), pos.getZ()));
 					stack.setTagCompound(null);
 					player.sendMessage(new TextComponentTranslation("lt.reset"));
 					return EnumActionResult.FAIL;
@@ -62,14 +62,18 @@ public class Linkingtool extends Item {
 			}
 			return EnumActionResult.SUCCESS;
 		} else if (predicate.test(worldIn, pos)) {
-			if(stack.getTagCompound() != null) {
-				
+			if (stack.getTagCompound() != null) {
+				player.sendMessage(new TextComponentTranslation("lt.setpos.msg"));
 				return EnumActionResult.FAIL;
 			}
 			final NBTTagCompound comp = NBTUtil.createPosTag(pos);
 			stack.setTagCompound(comp);
 			player.sendMessage(new TextComponentTranslation("lt.setpos", pos.getX(), pos.getY(), pos.getZ()));
 			player.sendMessage(new TextComponentTranslation("lt.setpos.msg"));
+			return EnumActionResult.SUCCESS;
+		} else if (player.isSneaking() && stack.getTagCompound() != null) {
+			stack.setTagCompound(null);
+			player.sendMessage(new TextComponentTranslation("lt.reset"));
 			return EnumActionResult.SUCCESS;
 		}
 		return EnumActionResult.FAIL;
@@ -78,6 +82,15 @@ public class Linkingtool extends Item {
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void addInformation(ItemStack stack, World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
+		final NBTTagCompound nbt = stack.getTagCompound();
+		if (nbt != null) {
+			final BlockPos pos = NBTUtil.getPosFromTag(nbt);
+			if (pos != null) {
+				tooltip.add(I18n.format("lt.linkedpos", pos.getX(), pos.getY(), pos.getZ()));
+				return;
+			}
+		}
+
 		tooltip.add(I18n.format("lt.notlinked"));
 		tooltip.add(I18n.format("lt.notlinked.msg"));
 	}
