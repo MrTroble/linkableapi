@@ -22,17 +22,16 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class Linkingtool extends Item {
-
+	
 	final BiPredicate<World, BlockPos> predicate;
-
+	
 	public Linkingtool(final CreativeTabs tab, final BiPredicate<World, BlockPos> predicate) {
 		setCreativeTab(tab);
 		this.predicate = predicate;
 	}
-
+	
 	@Override
-	public EnumActionResult onItemUse(EntityPlayer player, World worldIn, BlockPos pos, EnumHand hand,
-			EnumFacing facing, float hitX, float hitY, float hitZ) {
+	public EnumActionResult onItemUse(EntityPlayer player, World worldIn, BlockPos pos, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
 		if (worldIn.isRemote)
 			return EnumActionResult.PASS;
 		final TileEntity entity = worldIn.getTileEntity(pos);
@@ -78,7 +77,7 @@ public class Linkingtool extends Item {
 		}
 		return EnumActionResult.FAIL;
 	}
-
+	
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void addInformation(ItemStack stack, World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
@@ -90,7 +89,7 @@ public class Linkingtool extends Item {
 				return;
 			}
 		}
-
+		
 		tooltip.add(I18n.format("lt.notlinked"));
 		tooltip.add(I18n.format("lt.notlinked.msg"));
 	}
