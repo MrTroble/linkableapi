@@ -1,4 +1,4 @@
-package eu.gir.girsignals.linkableApi;
+package eu.gir.linkableapi;
 
 import net.minecraft.util.math.BlockPos;
 

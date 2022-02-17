@@ -1,4 +1,4 @@
-package eu.gir.girsignals.linkableApi;
+package eu.gir.linkableapi;
 
 import java.util.List;
 import java.util.function.BiPredicate;
