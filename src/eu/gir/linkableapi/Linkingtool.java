@@ -3,99 +3,119 @@ package eu.gir.linkableapi;
 import java.util.List;
 import java.util.function.BiPredicate;
 
-import net.minecraft.client.resources.I18n;
-import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTUtil;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraft.world.World;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import javax.annotation.Nullable;
+
+import com.google.common.base.Predicate;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class Linkingtool extends Item {
 
-    final BiPredicate<World, BlockPos> predicate;
+    private final BiPredicate<Level, BlockPos> predicate;
+    private final Predicate<BlockEntity> predicateSet;
 
-    public Linkingtool(final CreativeTabs tab, final BiPredicate<World, BlockPos> predicate) {
-        setCreativeTab(tab);
+    public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate) {
+        this(tab, predicate, _u -> true);
+    }
+
+    public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
+            final Predicate<BlockEntity> predicateSet) {
+        super(new Properties().tab(tab));
         this.predicate = predicate;
+        this.predicateSet = predicateSet;
     }
 
     @Override
-    public EnumActionResult onItemUse(final EntityPlayer player, final World worldIn,
-            final BlockPos pos, final EnumHand hand, final EnumFacing facing, final float hitX,
-            final float hitY, final float hitZ) {
-        if (worldIn.isRemote)
-            return EnumActionResult.PASS;
-        final TileEntity entity = worldIn.getTileEntity(pos);
-        final ItemStack stack = player.getHeldItem(hand);
-        if (entity instanceof ILinkableTile) {
-            final ILinkableTile controller = ((ILinkableTile) worldIn.getTileEntity(pos));
-            if (!player.isSneaking()) {
-                final NBTTagCompound comp = stack.getTagCompound();
+    public InteractionResult onItemUseFirst(final ItemStack stack, final UseOnContext ctx) {
+        final Level levelIn = ctx.getLevel();
+        final Player player = ctx.getPlayer();
+        final BlockPos pos = ctx.getClickedPos();
+        if (levelIn.isClientSide)
+            return InteractionResult.PASS;
+        final BlockEntity entity = levelIn.getBlockEntity(pos);
+        if (entity instanceof ILinkableTile && this.predicateSet.apply(entity)) {
+            final ILinkableTile controller = (ILinkableTile) entity;
+            if (!player.isShiftKeyDown()) {
+                final CompoundTag comp = stack.getTag();
                 if (comp == null) {
-                    player.sendMessage(new TextComponentTranslation("lt.notset", pos.toString()));
-                    return EnumActionResult.PASS;
+                    message(player, "lt.notset", pos.toString());
+                    return InteractionResult.PASS;
                 }
-                final BlockPos lpos = NBTUtil.getPosFromTag(comp);
+                final BlockPos lpos = NbtUtils.readBlockPos(comp);
                 if (controller.link(lpos)) {
-                    player.sendMessage(new TextComponentTranslation("lt.linkedpos", pos.getX(),
-                            pos.getY(), pos.getZ()));
-                    stack.setTagCompound(null);
-                    player.sendMessage(new TextComponentTranslation("lt.reset"));
-                    return EnumActionResult.FAIL;
+                    message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
+                    stack.setTag(null);
+                    message(player, "lt.reset");
+                    return InteractionResult.FAIL;
                 }
-                player.sendMessage(new TextComponentTranslation("lt.notlinked"));
-                player.sendMessage(new TextComponentTranslation("lt.notlinked.msg"));
-                return EnumActionResult.FAIL;
+                message(player, "lt.notlinked");
+                message(player, "lt.notlinked.msg");
+                return InteractionResult.FAIL;
             } else {
                 if (controller.hasLink() && controller.unlink()) {
-                    player.sendMessage(new TextComponentTranslation("lt.unlink"));
+                    message(player, "lt.unlink");
                 }
             }
-            return EnumActionResult.SUCCESS;
-        } else if (predicate.test(worldIn, pos)) {
-            if (stack.getTagCompound() != null) {
-                player.sendMessage(new TextComponentTranslation("lt.setpos.msg"));
-                return EnumActionResult.FAIL;
+            return InteractionResult.SUCCESS;
+        } else if (predicate.test(levelIn, pos)) {
+            if (stack.getTag() != null) {
+                message(player, "lt.setpos.msg");
+                return InteractionResult.FAIL;
             }
-            final NBTTagCompound comp = NBTUtil.createPosTag(pos);
-            stack.setTagCompound(comp);
-            player.sendMessage(
-                    new TextComponentTranslation("lt.setpos", pos.getX(), pos.getY(), pos.getZ()));
-            player.sendMessage(new TextComponentTranslation("lt.setpos.msg"));
-            return EnumActionResult.SUCCESS;
-        } else if (player.isSneaking() && stack.getTagCompound() != null) {
-            stack.setTagCompound(null);
-            player.sendMessage(new TextComponentTranslation("lt.reset"));
-            return EnumActionResult.SUCCESS;
+            final CompoundTag comp = NbtUtils.writeBlockPos(pos);
+            stack.setTag(comp);
+            message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+            message(player, "lt.setpos.msg");
+            return InteractionResult.SUCCESS;
+        } else if (player.isShiftKeyDown() && stack.getTag() != null) {
+            stack.setTag(null);
+            message(player, "lt.reset");
+            return InteractionResult.SUCCESS;
         }
-        return EnumActionResult.FAIL;
+        return InteractionResult.FAIL;
     }
 
-    @SideOnly(Side.CLIENT)
     @Override
-    public void addInformation(final ItemStack stack, final World worldIn,
-            final List<String> tooltip, final ITooltipFlag flagIn) {
-        final NBTTagCompound nbt = stack.getTagCompound();
+    public void appendHoverText(final ItemStack stack, @Nullable final Level levelIn,
+            final List<Component> tooltip, final TooltipFlag flagIn) {
+        final CompoundTag nbt = stack.getTag();
         if (nbt != null) {
-            final BlockPos pos = NBTUtil.getPosFromTag(nbt);
+            final BlockPos pos = NbtUtils.readBlockPos(nbt);
             if (pos != null) {
-                tooltip.add(I18n.format("lt.linkedpos", pos.getX(), pos.getY(), pos.getZ()));
+                tooltip(tooltip, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                 return;
             }
         }
+        tooltip(tooltip, "lt.notlinked");
+        tooltip(tooltip, "lt.notlinked.msg");
+    }
 
-        tooltip.add(I18n.format("lt.notlinked"));
-        tooltip.add(I18n.format("lt.notlinked.msg"));
+    @SuppressWarnings({
+            "rawtypes", "unchecked"
+    })
+    public void tooltip(final List list, final String text, final Object... obj) {
+        list.add(getComponent(text, obj));
+    }
+
+    public void message(final Player player, final String text, final Object... obj) {
+        player.sendSystemMessage(getComponent(text, obj));
+    }
+
+    public MutableComponent getComponent(final String text, final Object... obj) {
+        return MutableComponent.create(new TranslatableContents(text, obj));
     }
 }
