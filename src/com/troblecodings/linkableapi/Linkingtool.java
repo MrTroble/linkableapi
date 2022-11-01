@@ -1,4 +1,4 @@
-package eu.gir.linkableapi;
+package com.troblecodings.linkableapi;
 
 import java.util.List;
 import java.util.function.BiPredicate;
