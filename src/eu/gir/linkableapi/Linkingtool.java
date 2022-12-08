@@ -22,6 +22,8 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.event.CreativeModeTabEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 public class Linkingtool extends Item {
 
@@ -34,9 +36,11 @@ public class Linkingtool extends Item {
 
     public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet) {
-        super(new Properties().tab(tab));
+        super(new Properties());
         this.predicate = predicate;
         this.predicateSet = predicateSet;
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(
+                ev -> ((CreativeModeTabEvent.BuildContents) ev).registerSimple(tab, this));
     }
 
     @Override
