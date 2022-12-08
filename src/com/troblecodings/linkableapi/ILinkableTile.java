@@ -1,4 +1,4 @@
-package eu.gir.linkableapi;
+package com.troblecodings.linkableapi;
 
 import net.minecraft.core.BlockPos;
 

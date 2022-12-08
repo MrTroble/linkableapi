@@ -1,4 +1,4 @@
-package eu.gir.linkableapi;
+package com.troblecodings.linkableapi;
 
 import java.util.List;
 import java.util.function.BiPredicate;
@@ -39,8 +39,9 @@ public class Linkingtool extends Item {
         super(new Properties());
         this.predicate = predicate;
         this.predicateSet = predicateSet;
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(
-                ev -> ((CreativeModeTabEvent.BuildContents) ev).registerSimple(tab, this));
+        if (tab != null)
+            FMLJavaModLoadingContext.get().getModEventBus().addListener(
+                    ev -> ((CreativeModeTabEvent.BuildContents) ev).registerSimple(tab, this));
     }
 
     @Override
