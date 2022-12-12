@@ -12,7 +12,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CreativeModeTab;
@@ -22,8 +22,6 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.event.CreativeModeTabEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 public class Linkingtool extends Item {
 
@@ -36,12 +34,9 @@ public class Linkingtool extends Item {
 
     public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet) {
-        super(new Properties());
+        super(new Properties().tab(tab));
         this.predicate = predicate;
         this.predicateSet = predicateSet;
-        if (tab != null)
-            FMLJavaModLoadingContext.get().getModEventBus().addListener(
-                    ev -> ((CreativeModeTabEvent.BuildContents) ev).registerSimple(tab, this));
     }
 
     @Override
@@ -117,10 +112,10 @@ public class Linkingtool extends Item {
     }
 
     public void message(final Player player, final String text, final Object... obj) {
-        player.sendSystemMessage(getComponent(text, obj));
+        player.sendMessage(getComponent(text, obj), player.getUUID());
     }
 
     public MutableComponent getComponent(final String text, final Object... obj) {
-        return MutableComponent.create(new TranslatableContents(text, obj));
+        return new TranslatableComponent(text, obj);
     }
 }
