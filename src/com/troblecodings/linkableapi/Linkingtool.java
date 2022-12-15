@@ -112,7 +112,7 @@ public class Linkingtool extends Item {
     }
 
     public void message(final PlayerEntity player, final String text, final Object... obj) {
-        player.sendMessage(getComponent(text, obj), player.getUUID());
+        player.sendMessage(getComponent(text, obj));
     }
 
     public TextComponent getComponent(final String text, final Object... obj) {
