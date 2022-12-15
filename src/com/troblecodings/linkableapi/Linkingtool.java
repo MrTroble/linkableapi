@@ -7,94 +7,94 @@ import javax.annotation.Nullable;
 
 import com.google.common.base.Predicate;
 
-import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.client.util.ITooltipFlag;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroup;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.ItemUseContext;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.NBTUtil;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ActionResultType;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.world.World;
 
 public class Linkingtool extends Item {
 
-    private final BiPredicate<Level, BlockPos> predicate;
-    private final Predicate<BlockEntity> predicateSet;
+    private final BiPredicate<World, BlockPos> predicate;
+    private final Predicate<TileEntity> predicateSet;
 
-    public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate) {
+    public Linkingtool(final ItemGroup tab, final BiPredicate<World, BlockPos> predicate) {
         this(tab, predicate, _u -> true);
     }
 
-    public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
-            final Predicate<BlockEntity> predicateSet) {
+    public Linkingtool(final ItemGroup tab, final BiPredicate<World, BlockPos> predicate,
+            final Predicate<TileEntity> predicateSet) {
         super(new Properties().tab(tab));
         this.predicate = predicate;
         this.predicateSet = predicateSet;
     }
 
     @Override
-    public InteractionResult onItemUseFirst(final ItemStack stack, final UseOnContext ctx) {
-        final Level levelIn = ctx.getLevel();
-        final Player player = ctx.getPlayer();
+    public ActionResultType onItemUseFirst(final ItemStack stack, final ItemUseContext ctx) {
+        final World levelIn = ctx.getLevel();
+        final PlayerEntity player = ctx.getPlayer();
         final BlockPos pos = ctx.getClickedPos();
         if (levelIn.isClientSide)
-            return InteractionResult.PASS;
-        final BlockEntity entity = levelIn.getBlockEntity(pos);
+            return ActionResultType.PASS;
+        final TileEntity entity = levelIn.getBlockEntity(pos);
         if (entity instanceof ILinkableTile && this.predicateSet.apply(entity)) {
             final ILinkableTile controller = (ILinkableTile) entity;
             if (!player.isShiftKeyDown()) {
-                final CompoundTag comp = stack.getTag();
+                final CompoundNBT comp = stack.getTag();
                 if (comp == null) {
                     message(player, "lt.notset", pos.toString());
-                    return InteractionResult.PASS;
+                    return ActionResultType.PASS;
                 }
-                final BlockPos lpos = NbtUtils.readBlockPos(comp);
+                final BlockPos lpos = NBTUtil.readBlockPos(comp);
                 if (controller.link(lpos)) {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                     stack.setTag(null);
                     message(player, "lt.reset");
-                    return InteractionResult.FAIL;
+                    return ActionResultType.FAIL;
                 }
                 message(player, "lt.notlinked");
                 message(player, "lt.notlinked.msg");
-                return InteractionResult.FAIL;
+                return ActionResultType.FAIL;
             } else {
                 if (controller.hasLink() && controller.unlink()) {
                     message(player, "lt.unlink");
                 }
             }
-            return InteractionResult.SUCCESS;
+            return ActionResultType.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
             if (stack.getTag() != null) {
                 message(player, "lt.setpos.msg");
-                return InteractionResult.FAIL;
+                return ActionResultType.FAIL;
             }
-            final CompoundTag comp = NbtUtils.writeBlockPos(pos);
+            final CompoundNBT comp = NBTUtil.writeBlockPos(pos);
             stack.setTag(comp);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
-            return InteractionResult.SUCCESS;
+            return ActionResultType.SUCCESS;
         } else if (player.isShiftKeyDown() && stack.getTag() != null) {
             stack.setTag(null);
             message(player, "lt.reset");
-            return InteractionResult.SUCCESS;
+            return ActionResultType.SUCCESS;
         }
-        return InteractionResult.FAIL;
+        return ActionResultType.FAIL;
     }
 
     @Override
-    public void appendHoverText(final ItemStack stack, @Nullable final Level levelIn,
-            final List<Component> tooltip, final TooltipFlag flagIn) {
-        final CompoundTag nbt = stack.getTag();
+    public void appendHoverText(final ItemStack stack, @Nullable final World levelIn,
+            final List<ITextComponent> tooltip, final ITooltipFlag flagIn) {
+        final CompoundNBT nbt = stack.getTag();
         if (nbt != null) {
-            final BlockPos pos = NbtUtils.readBlockPos(nbt);
+            final BlockPos pos = NBTUtil.readBlockPos(nbt);
             if (pos != null) {
                 tooltip(tooltip, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                 return;
@@ -111,11 +111,11 @@ public class Linkingtool extends Item {
         list.add(getComponent(text, obj));
     }
 
-    public void message(final Player player, final String text, final Object... obj) {
+    public void message(final PlayerEntity player, final String text, final Object... obj) {
         player.sendMessage(getComponent(text, obj), player.getUUID());
     }
 
-    public MutableComponent getComponent(final String text, final Object... obj) {
-        return new TranslatableComponent(text, obj);
+    public TextComponent getComponent(final String text, final Object... obj) {
+        return new TranslationTextComponent(text, obj);
     }
 }

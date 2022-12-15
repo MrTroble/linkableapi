@@ -1,6 +1,6 @@
 package com.troblecodings.linkableapi;
 
-import net.minecraft.core.BlockPos;
+import net.minecraft.util.math.BlockPos;
 
 public interface ILinkableTile {
 
