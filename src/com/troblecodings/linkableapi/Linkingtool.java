@@ -49,7 +49,7 @@ public class Linkingtool extends Item {
         final TileEntity entity = levelIn.getBlockEntity(pos);
         if (entity instanceof ILinkableTile && this.predicateSet.apply(entity)) {
             final ILinkableTile controller = (ILinkableTile) entity;
-            if (!player.isShiftKeyDown()) {
+            if (!player.isSneaking()) {
                 final CompoundNBT comp = stack.getTag();
                 if (comp == null) {
                     message(player, "lt.notset", pos.toString());
@@ -81,7 +81,7 @@ public class Linkingtool extends Item {
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return ActionResultType.SUCCESS;
-        } else if (player.isShiftKeyDown() && stack.getTag() != null) {
+        } else if (player.isSneaking() && stack.getTag() != null) {
             stack.setTag(null);
             message(player, "lt.reset");
             return ActionResultType.SUCCESS;
