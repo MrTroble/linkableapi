@@ -98,4 +98,19 @@ public class Linkingtool extends Item {
         tooltip.add(I18n.format("lt.notlinked"));
         tooltip.add(I18n.format("lt.notlinked.msg"));
     }
+
+    @SuppressWarnings({
+            "rawtypes", "unchecked"
+    })
+    public void tooltip(final List list, final String text, final Object... obj) {
+        list.add(getComponent(text, obj));
+    }
+
+    public void message(final EntityPlayer player, final String text, final Object... obj) {
+        player.sendMessage(getComponent(text, obj));
+    }
+
+    public TextComponentTranslation getComponent(final String text, final Object... obj) {
+        return new TextComponentTranslation(text, obj);
+    }
 }
