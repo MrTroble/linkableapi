@@ -43,7 +43,7 @@ public class Linkingtool extends Item {
         final World levelIn = ctx.getWorld();
         final EntityPlayer player = ctx.getPlayer();
         final BlockPos pos = ctx.getPos();
-        if (!levelIn.isRemote)
+        if (levelIn.isRemote)
             return EnumActionResult.PASS;
         final TileEntity entity = levelIn.getTileEntity(pos);
         if (entity instanceof ILinkableTile && this.predicateSet.apply(entity)) {
