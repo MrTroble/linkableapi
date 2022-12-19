@@ -29,6 +29,7 @@ public class Linkingtool extends Item {
 
     private final BiPredicate<Level, BlockPos> predicate;
     private final Predicate<BlockEntity> predicateSet;
+    private final CreativeModeTab tab;
 
     public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate) {
         this(tab, predicate, _u -> true);
@@ -39,9 +40,15 @@ public class Linkingtool extends Item {
         super(new Properties());
         this.predicate = predicate;
         this.predicateSet = predicateSet;
-        if (tab != null)
-            FMLJavaModLoadingContext.get().getModEventBus().addListener(
-                    ev -> ((CreativeModeTabEvent.BuildContents) ev).registerSimple(tab, this));
+        this.tab = tab;
+        if (tab != null) {
+            FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onTab);
+        }
+    }
+
+    private void onTab(final CreativeModeTabEvent.BuildContents ev) {
+        if (ev.getTab().equals(tab))
+            ev.accept(() -> this);
     }
 
     @Override
