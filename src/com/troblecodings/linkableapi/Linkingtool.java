@@ -27,6 +27,7 @@ public class Linkingtool extends Item {
 
     private final BiPredicate<Level, BlockPos> predicate;
     private final Predicate<BlockEntity> predicateSet;
+    private final TaggableFunction tagFromFunction;
 
     public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate) {
         this(tab, predicate, _u -> true);
@@ -34,15 +35,24 @@ public class Linkingtool extends Item {
 
     public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet) {
+        this(tab, predicate, predicateSet, (_u1, _u2, _u3) -> {
+        });
+    }
+
+    public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
+            final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
         super(new Properties().tab(tab));
         this.predicate = predicate;
         this.predicateSet = predicateSet;
+        this.tagFromFunction = function;
     }
 
     @Override
     public InteractionResult onItemUseFirst(final ItemStack stack, final UseOnContext ctx) {
         final Level levelIn = ctx.getLevel();
         final Player player = ctx.getPlayer();
+        if (player == null)
+            return InteractionResult.FAIL;
         final BlockPos pos = ctx.getClickedPos();
         if (levelIn.isClientSide)
             return InteractionResult.PASS;
@@ -55,8 +65,8 @@ public class Linkingtool extends Item {
                     message(player, "lt.notset", pos.toString());
                     return InteractionResult.PASS;
                 }
-                final BlockPos lpos = NbtUtils.readBlockPos(comp);
-                if (controller.link(lpos)) {
+                final BlockPos linkedPos = NbtUtils.readBlockPos(comp);
+                if (controller.link(linkedPos, comp)) {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                     stack.setTag(null);
                     message(player, "lt.reset");
@@ -77,6 +87,7 @@ public class Linkingtool extends Item {
                 return InteractionResult.FAIL;
             }
             final CompoundTag comp = NbtUtils.writeBlockPos(pos);
+            tagFromFunction.test(levelIn, pos, comp);
             stack.setTag(comp);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
