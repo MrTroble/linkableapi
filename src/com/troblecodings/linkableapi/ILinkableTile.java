@@ -8,7 +8,9 @@ public interface ILinkableTile {
     boolean hasLink();
 
     @Deprecated
-    boolean link(final BlockPos pos);
+    default boolean link(final BlockPos pos) {
+        return false;
+    }
 
     default boolean link(final BlockPos pos, final CompoundTag tag) {
         return link(pos);
