@@ -11,8 +11,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CreativeModeTab;
@@ -25,7 +23,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.event.CreativeModeTabEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
-public class Linkingtool extends Item {
+public class Linkingtool extends Item implements Message {
 
     private final BiPredicate<Level, BlockPos> predicate;
     private final Predicate<BlockEntity> predicateSet;
@@ -123,11 +121,4 @@ public class Linkingtool extends Item {
         list.add(getComponent(text, obj));
     }
 
-    public void message(final Player player, final String text, final Object... obj) {
-        player.sendSystemMessage(getComponent(text, obj));
-    }
-
-    public MutableComponent getComponent(final String text, final Object... obj) {
-        return MutableComponent.create(new TranslatableContents(text, obj));
-    }
 }
