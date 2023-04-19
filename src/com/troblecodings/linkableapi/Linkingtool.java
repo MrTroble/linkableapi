@@ -41,7 +41,7 @@ public class Linkingtool extends Item {
 
     public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
-        super(new Properties().tab(tab));
+        super(new Properties().tab(tab).durability(1));
         this.predicate = predicate;
         this.predicateSet = predicateSet;
         this.tagFromFunction = function;
@@ -82,9 +82,14 @@ public class Linkingtool extends Item {
             }
             return InteractionResult.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
-            if (stack.getTag() != null) {
-                message(player, "lt.setpos.msg");
-                return InteractionResult.FAIL;
+            final CompoundTag tag = stack.getTag();
+            if (tag != null) {
+                final boolean containsPos = tag.contains("X") && tag.contains("Y")
+                        && tag.contains("Z");
+                if (containsPos) {
+                    message(player, "lt.setpos.msg");
+                    return InteractionResult.FAIL;
+                }
             }
             final CompoundTag comp = NbtUtils.writeBlockPos(pos);
             tagFromFunction.test(levelIn, pos, comp);
@@ -103,10 +108,11 @@ public class Linkingtool extends Item {
     @Override
     public void appendHoverText(final ItemStack stack, @Nullable final Level levelIn,
             final List<Component> tooltip, final TooltipFlag flagIn) {
-        final CompoundTag nbt = stack.getTag();
-        if (nbt != null) {
-            final BlockPos pos = NbtUtils.readBlockPos(nbt);
-            if (pos != null) {
+        final CompoundTag tag = stack.getTag();
+        if (tag != null) {
+            final boolean containsPos = tag.contains("X") && tag.contains("Y") && tag.contains("Z");
+            if (containsPos) {
+                final BlockPos pos = NbtUtils.readBlockPos(tag);
                 tooltip(tooltip, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                 return;
             }
