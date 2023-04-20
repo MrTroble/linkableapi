@@ -41,7 +41,7 @@ public class Linkingtool extends Item {
 
     public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
-        super(new Properties().tab(tab).durability(1));
+        super(new Properties().tab(tab).durability(64).setNoRepair());
         this.predicate = predicate;
         this.predicateSet = predicateSet;
         this.tagFromFunction = function;
