@@ -35,7 +35,7 @@ public class Linkingtool extends Item {
 
     public Linkingtool(final ItemGroup tab, final BiPredicate<World, BlockPos> predicate,
             final Predicate<TileEntity> predicateSet) {
-        super(new Properties().tab(tab), predicate, predicateSet, (_u1, _u2, _u3) -> {
+        this(tab, predicate, predicateSet, (_u1, _u2, _u3) -> {
         });
     }
 
@@ -52,7 +52,7 @@ public class Linkingtool extends Item {
         final World levelIn = ctx.getLevel();
         final PlayerEntity player = ctx.getPlayer();
         if (player == null)
-            return InteractionResult.FAIL;
+            return ActionResultType.FAIL;
         final BlockPos pos = ctx.getClickedPos();
         if (levelIn.isClientSide)
             return ActionResultType.PASS;
@@ -65,7 +65,7 @@ public class Linkingtool extends Item {
                     message(player, "lt.notset", pos.toString());
                     return ActionResultType.PASS;
                 }
-                final BlockPos linkedPos = NbtUtils.readBlockPos(comp);
+                final BlockPos linkedPos = NBTUtil.readBlockPos(comp);
                 if (controller.link(linkedPos, comp)) {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                     stack.setTag(null);
@@ -82,7 +82,7 @@ public class Linkingtool extends Item {
             }
             return ActionResultType.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
-            final CompoundTag tag = stack.getTag();
+            final CompoundNBT tag = stack.getTag();
             if (tag != null) {
                 final boolean containsPos = tag.contains("X") && tag.contains("Y")
                         && tag.contains("Z");
