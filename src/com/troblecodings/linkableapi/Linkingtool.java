@@ -27,6 +27,7 @@ public class Linkingtool extends Item {
 
     private final BiPredicate<World, BlockPos> predicate;
     private final Predicate<TileEntity> predicateSet;
+    private final TaggableFunction tagFromFunction;
 
     public Linkingtool(final ItemGroup tab, final BiPredicate<World, BlockPos> predicate) {
         this(tab, predicate, _u -> true);
@@ -34,15 +35,24 @@ public class Linkingtool extends Item {
 
     public Linkingtool(final ItemGroup tab, final BiPredicate<World, BlockPos> predicate,
             final Predicate<TileEntity> predicateSet) {
-        super(new Properties().tab(tab));
+        super(new Properties().tab(tab), predicate, predicateSet, (_u1, _u2, _u3) -> {
+        });
+    }
+
+    public Linkingtool(final ItemGroup tab, final BiPredicate<World, BlockPos> predicate,
+            final Predicate<TileEntity> predicateSet, final TaggableFunction function) {
+        super(new Properties().tab(tab).durability(64).setNoRepair());
         this.predicate = predicate;
         this.predicateSet = predicateSet;
+        this.tagFromFunction = function;
     }
 
     @Override
     public ActionResultType onItemUseFirst(final ItemStack stack, final ItemUseContext ctx) {
         final World levelIn = ctx.getLevel();
         final PlayerEntity player = ctx.getPlayer();
+        if (player == null)
+            return InteractionResult.FAIL;
         final BlockPos pos = ctx.getClickedPos();
         if (levelIn.isClientSide)
             return ActionResultType.PASS;
@@ -55,8 +65,8 @@ public class Linkingtool extends Item {
                     message(player, "lt.notset", pos.toString());
                     return ActionResultType.PASS;
                 }
-                final BlockPos lpos = NBTUtil.readBlockPos(comp);
-                if (controller.link(lpos)) {
+                final BlockPos linkedPos = NbtUtils.readBlockPos(comp);
+                if (controller.link(linkedPos, comp)) {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                     stack.setTag(null);
                     message(player, "lt.reset");
@@ -72,11 +82,17 @@ public class Linkingtool extends Item {
             }
             return ActionResultType.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
-            if (stack.getTag() != null) {
-                message(player, "lt.setpos.msg");
-                return ActionResultType.FAIL;
+            final CompoundTag tag = stack.getTag();
+            if (tag != null) {
+                final boolean containsPos = tag.contains("X") && tag.contains("Y")
+                        && tag.contains("Z");
+                if (containsPos) {
+                    message(player, "lt.setpos.msg");
+                    return ActionResultType.FAIL;
+                }
             }
             final CompoundNBT comp = NBTUtil.writeBlockPos(pos);
+            tagFromFunction.test(levelIn, pos, comp);
             stack.setTag(comp);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
@@ -92,10 +108,11 @@ public class Linkingtool extends Item {
     @Override
     public void appendHoverText(final ItemStack stack, @Nullable final World levelIn,
             final List<ITextComponent> tooltip, final ITooltipFlag flagIn) {
-        final CompoundNBT nbt = stack.getTag();
-        if (nbt != null) {
-            final BlockPos pos = NBTUtil.readBlockPos(nbt);
-            if (pos != null) {
+        final CompoundNBT tag = stack.getTag();
+        if (tag != null) {
+            final boolean containsPos = tag.contains("X") && tag.contains("Y") && tag.contains("Z");
+            if (containsPos) {
+                final BlockPos pos = NBTUtil.readBlockPos(tag);
                 tooltip(tooltip, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                 return;
             }
