@@ -128,11 +128,11 @@ public class Linkingtool extends Item {
         list.add(getComponent(text, obj));
     }
 
-    public void message(final PlayerEntity player, final String text, final Object... obj) {
+    public void message(final EntityPlayer player, final String text, final Object... obj) {
         player.sendMessage(getComponent(text, obj));
     }
 
-    public TextComponent getComponent(final String text, final Object... obj) {
-        return new TranslationTextComponent(text, obj);
+    public TextComponentTranslation getComponent(final String text, final Object... obj) {
+        return new TextComponentTranslation(text, obj);
     }
 }
