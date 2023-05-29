@@ -5,6 +5,7 @@ import java.util.function.BiPredicate;
 
 import com.google.common.base.Predicate;
 
+import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
@@ -17,8 +18,11 @@ import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class Linkingtool extends Item {
 
@@ -47,8 +51,8 @@ public class Linkingtool extends Item {
     }
 
     @Override
-    public EnumActionResult onItemUse(EntityPlayer player, World worldIn, BlockPos pos,
-            EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
+    public EnumActionResult onItemUse(final EntityPlayer player, final World worldIn, final BlockPos pos,
+            final EnumHand hand, final EnumFacing facing, final float hitX, final float hitY, final float hitZ) {
         if (player == null)
             return EnumActionResult.FAIL;
         if (worldIn.isRemote)
@@ -102,20 +106,21 @@ public class Linkingtool extends Item {
         return EnumActionResult.FAIL;
     }
 
+    @SideOnly(Side.CLIENT)
     @Override
-    public void addInformation(ItemStack stack, World worldIn, List<String> tooltip,
-            ITooltipFlag flagIn) {
+    public void addInformation(final ItemStack stack, final World worldIn, final List<String> tooltip,
+            final ITooltipFlag flagIn) {
         final NBTTagCompound tag = stack.getTagCompound();
         if (tag != null) {
             final boolean containsPos = tag.hasKey("X") && tag.hasKey("Y") && tag.hasKey("Z");
             if (containsPos) {
                 final BlockPos pos = NBTUtil.getPosFromTag(tag);
-                tooltip(tooltip, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
+                tooltip.add(I18n.format("lt.linkedpos", pos.getX(), pos.getY(), pos.getZ()));
                 return;
             }
         }
-        tooltip(tooltip, "lt.notlinked");
-        tooltip(tooltip, "lt.notlinked.msg");
+        tooltip.add(I18n.format("lt.notlinked"));
+        tooltip.add(I18n.format("lt.notlinked.msg"));
     }
 
     @SuppressWarnings({
@@ -129,7 +134,7 @@ public class Linkingtool extends Item {
         player.sendMessage(getComponent(text, obj));
     }
 
-    public TextComponentTranslation getComponent(final String text, final Object... obj) {
+    public ITextComponent getComponent(final String text, final Object... obj) {
         return new TextComponentTranslation(text, obj);
     }
 }
