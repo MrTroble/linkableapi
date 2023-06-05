@@ -47,7 +47,8 @@ public class Linkingtool extends Item {
         this.tagFromFunction = function;
         setCreativeTab(tab);
         setNoRepair();
-        // TODO Durability to 64
+        setMaxDamage(64);
+        setMaxStackSize(1);
     }
 
     @Override
