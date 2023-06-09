@@ -20,7 +20,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.event.CreativeModeTabEvent;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 public class Linkingtool extends Item implements Message {
@@ -44,7 +44,7 @@ public class Linkingtool extends Item implements Message {
         }
     }
 
-    private void onTab(final CreativeModeTabEvent.BuildContents ev) {
+    private void onTab(final BuildCreativeModeTabContentsEvent ev) {
         if (ev.getTab().equals(tab))
             ev.accept(() -> this);
     }
