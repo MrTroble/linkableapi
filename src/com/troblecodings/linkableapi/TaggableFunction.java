@@ -8,5 +8,4 @@ import net.minecraft.world.World;
 public interface TaggableFunction {
 
     void test(World level, BlockPos pos, NBTTagCompound tag);
-
 }
