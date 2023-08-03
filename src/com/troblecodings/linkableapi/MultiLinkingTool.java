@@ -42,9 +42,6 @@ public class MultiLinkingTool extends Item {
         this.tagFromFunction = function;
     }
 
-    @SuppressWarnings({
-            "rawtypes", "unchecked"
-    })
     @Override
     public EnumActionResult onItemUse(final EntityPlayer player, final World levelIn,
             final BlockPos pos, final EnumHand hand, final EnumFacing facing, final float hitX,
