@@ -77,7 +77,7 @@ public class MultiLinkingTool extends Item {
                 }
                 list.stream().map(tag -> NBTUtil.readBlockPos((CompoundNBT) tag))
                         .forEach(linkPos -> {
-                            if (controller.link(linkPos))
+                            if (controller.link(linkPos, comp))
                                 message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                         });
                 stack.setTag(null);
