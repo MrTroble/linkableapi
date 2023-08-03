@@ -34,9 +34,8 @@ public class MultiLinkingTool extends Item {
     private final BiPredicate<World, BlockPos> predicate;
     private final Predicate<TileEntity> predicateSet;
     private final TaggableFunction tagFromFunction;
-    
-    public MultiLinkingTool(final CreativeTabs tab,
-            final BiPredicate<World, BlockPos> predicate) {
+
+    public MultiLinkingTool(final CreativeTabs tab, final BiPredicate<World, BlockPos> predicate) {
         this(tab, predicate, _u -> true);
     }
 
@@ -46,9 +45,9 @@ public class MultiLinkingTool extends Item {
         this.predicate = predicate;
         this.predicateSet = predicateSet;
         this.tagFromFunction = function;
-        
+
     }
-    
+
     public MultiLinkingTool(final CreativeTabs tab, final BiPredicate<World, BlockPos> predicate,
             final Predicate<TileEntity> predicateSet) {
         this(tab, predicate, predicateSet, (_u1, _u2, _u3) -> {
