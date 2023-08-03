@@ -8,6 +8,7 @@ import javax.annotation.Nullable;
 
 import com.google.common.base.Predicate;
 
+import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
@@ -110,19 +111,12 @@ public class MultiLinkingTool extends Item {
             if (list != null) {
                 final List<BlockPos> linkedPos = new ArrayList<>();
                 list.forEach(tag -> linkedPos.add(NBTUtil.getPosFromTag((NBTTagCompound) tag)));
-                tooltip(tooltip, linkedPos.toString());
+                tooltip.add(linkedPos.toString());
                 return;
             }
         }
-        tooltip(tooltip, "lt.notlinked");
-        tooltip(tooltip, "lt.notlinked.msg");
-    }
-
-    @SuppressWarnings({
-            "rawtypes", "unchecked"
-    })
-    public void tooltip(final List list, final String text, final Object... obj) {
-        list.add(getComponent(text, obj));
+        tooltip.add(I18n.format("lt.notlinked"));
+        tooltip.add(I18n.format("lt.notlinked.msg"));
     }
 
     public void message(final EntityPlayer player, final String text, final Object... obj) {
@@ -132,5 +126,4 @@ public class MultiLinkingTool extends Item {
     public TextComponentTranslation getComponent(final String text, final Object... obj) {
         return new TextComponentTranslation(text, obj);
     }
-
 }
