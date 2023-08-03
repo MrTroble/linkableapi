@@ -42,6 +42,9 @@ public class MultiLinkingTool extends Item {
     public MultiLinkingTool(final CreativeTabs tab, final BiPredicate<World, BlockPos> predicate,
             final Predicate<TileEntity> predicateSet, final TaggableFunction function) {
         setCreativeTab(tab);
+        setNoRepair();
+        setMaxDamage(64);
+        setMaxStackSize(1);
         this.predicate = predicate;
         this.predicateSet = predicateSet;
         this.tagFromFunction = function;
