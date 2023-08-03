@@ -52,8 +52,9 @@ public class Linkingtool extends Item {
     }
 
     @Override
-    public EnumActionResult onItemUse(final EntityPlayer player, final World worldIn, final BlockPos pos,
-            final EnumHand hand, final EnumFacing facing, final float hitX, final float hitY, final float hitZ) {
+    public EnumActionResult onItemUse(final EntityPlayer player, final World worldIn,
+            final BlockPos pos, final EnumHand hand, final EnumFacing facing, final float hitX,
+            final float hitY, final float hitZ) {
         if (player == null)
             return EnumActionResult.FAIL;
         if (worldIn.isRemote)
@@ -109,8 +110,8 @@ public class Linkingtool extends Item {
 
     @SideOnly(Side.CLIENT)
     @Override
-    public void addInformation(final ItemStack stack, final World worldIn, final List<String> tooltip,
-            final ITooltipFlag flagIn) {
+    public void addInformation(final ItemStack stack, final World worldIn,
+            final List<String> tooltip, final ITooltipFlag flagIn) {
         final NBTTagCompound tag = stack.getTagCompound();
         if (tag != null) {
             final boolean containsPos = tag.hasKey("X") && tag.hasKey("Y") && tag.hasKey("Z");
