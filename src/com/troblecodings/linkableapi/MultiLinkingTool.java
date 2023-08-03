@@ -1,9 +1,8 @@
 package com.troblecodings.linkableapi;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiPredicate;
-import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -34,7 +33,6 @@ public class MultiLinkingTool extends Item {
     private final BiPredicate<World, BlockPos> predicate;
     private final Predicate<TileEntity> predicateSet;
     private final TaggableFunction tagFromFunction;
-
 
     public MultiLinkingTool(final CreativeTabs tab, final BiPredicate<World, BlockPos> predicate,
             final Predicate<TileEntity> predicateSet, final TaggableFunction function) {
@@ -70,12 +68,10 @@ public class MultiLinkingTool extends Item {
                     message(player, "lt.notlinked");
                     return EnumActionResult.FAIL;
                 }
-                ((Collection) list).stream().map(tag -> NBTUtil.getPosFromTag((NBTTagCompound) tag))
-                        .forEach(linkPos -> {
-                            if (controller.link(linkPos))
-                                message(player, "lt.linkedpos", pos.getX(),
-                                        pos.getY(), pos.getZ());
-                        });
+                list.forEach(tag -> {
+                    if (controller.link(NBTUtil.getPosFromTag((NBTTagCompound) tag), comp))
+                        message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
+                });
                 stack.setTagCompound(null);
                 message(player, "lt.reset");
                 return EnumActionResult.FAIL;
@@ -107,9 +103,6 @@ public class MultiLinkingTool extends Item {
         return EnumActionResult.FAIL;
     }
 
-    @SuppressWarnings({
-            "unchecked", "rawtypes"
-    })
     @SideOnly(Side.CLIENT)
     @Override
     public void addInformation(final ItemStack stack, @Nullable final World levelIn,
@@ -118,9 +111,9 @@ public class MultiLinkingTool extends Item {
         if (itemTag != null) {
             final NBTTagList list = (NBTTagList) itemTag.getTag(LINKED_BLOCKS);
             if (list != null) {
-                tooltip(tooltip, "lt.linkedpos",
-                        ((Collection) list).stream().map(tag -> NBTUtil.getPosFromTag((NBTTagCompound) tag))
-                                .collect(Collectors.toList()));
+                final List<BlockPos> linkedPos = new ArrayList<>();
+                list.forEach(tag -> linkedPos.add(NBTUtil.getPosFromTag((NBTTagCompound) tag)));
+                tooltip(tooltip, linkedPos.toString());
                 return;
             }
         }
