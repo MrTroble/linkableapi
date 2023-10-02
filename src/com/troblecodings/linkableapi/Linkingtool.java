@@ -78,6 +78,24 @@ public class Linkingtool extends Item {
             } else {
                 if (controller.hasLink() && controller.unlink()) {
                     message(player, "lt.unlink");
+                    return InteractionResult.SUCCESS;
+                }
+                if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
+                    final CompoundTag tag = stack.getTag();
+                    if (tag != null) {
+                        final boolean containsPos = tag.contains("X") && tag.contains("Y")
+                                && tag.contains("Z");
+                        if (containsPos) {
+                            message(player, "lt.setpos.msg");
+                            return InteractionResult.FAIL;
+                        }
+                    }
+                    final CompoundTag comp = NbtUtils.writeBlockPos(pos);
+                    tagFromFunction.test(levelIn, pos, comp);
+                    stack.setTag(comp);
+                    message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+                    message(player, "lt.setpos.msg");
+                    return InteractionResult.SUCCESS;
                 }
             }
             return InteractionResult.SUCCESS;
