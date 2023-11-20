@@ -69,7 +69,7 @@ public class MultiLinkingTool extends Item {
                 if (Screen.hasControlDown() && controller.canBeLinked()
                         && predicate.test(levelIn, pos)) {
 
-                    final CompoundTag tag = stack.getTag();
+                    CompoundTag tag = stack.getTag();
                     if (tag != null) {
                         final boolean containsPos = tag.contains("X") && tag.contains("Y")
                                 && tag.contains("Z");
@@ -78,9 +78,15 @@ public class MultiLinkingTool extends Item {
                             return InteractionResult.FAIL;
                         }
                     }
-                    final CompoundTag comp = NbtUtils.writeBlockPos(pos);
-                    tagFromFunction.test(levelIn, pos, comp);
-                    stack.setTag(comp);
+                    if (tag == null)
+                        tag = new CompoundTag();
+                    ListTag list = (ListTag) tag.get(LINKED_BLOCKS);
+                    if (list == null)
+                        list = new ListTag();
+                    list.add(NbtUtils.writeBlockPos(pos));
+                    tag.put(LINKED_BLOCKS, list);
+                    tagFromFunction.test(levelIn, pos, tag);
+                    stack.setTag(tag);
                     message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
                     message(player, "lt.setpos.msg");
                     return InteractionResult.SUCCESS;
