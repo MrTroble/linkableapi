@@ -70,14 +70,6 @@ public class MultiLinkingTool extends Item {
                         && predicate.test(levelIn, pos)) {
 
                     CompoundTag tag = stack.getTag();
-                    if (tag != null) {
-                        final boolean containsPos = tag.contains("X") && tag.contains("Y")
-                                && tag.contains("Z");
-                        if (containsPos) {
-                            message(player, "lt.setpos.msg");
-                            return InteractionResult.FAIL;
-                        }
-                    }
                     if (tag == null)
                         tag = new CompoundTag();
                     ListTag list = (ListTag) tag.get(LINKED_BLOCKS);
