@@ -8,7 +8,6 @@ import javax.annotation.Nullable;
 
 import com.google.common.base.Predicate;
 
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -66,23 +65,6 @@ public class MultiLinkingTool extends Item {
         if (entity instanceof ILinkableTile && this.predicateSet.apply(entity)) {
             final ILinkableTile controller = (ILinkableTile) entity;
             if (!player.isShiftKeyDown()) {
-                if (Screen.hasControlDown() && controller.canBeLinked()
-                        && predicate.test(levelIn, pos)) {
-
-                    CompoundTag tag = stack.getTag();
-                    if (tag == null)
-                        tag = new CompoundTag();
-                    ListTag list = (ListTag) tag.get(LINKED_BLOCKS);
-                    if (list == null)
-                        list = new ListTag();
-                    list.add(NbtUtils.writeBlockPos(pos));
-                    tag.put(LINKED_BLOCKS, list);
-                    tagFromFunction.test(levelIn, pos, tag);
-                    stack.setTag(tag);
-                    message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
-                    message(player, "lt.setpos.msg");
-                    return InteractionResult.SUCCESS;
-                }
                 final CompoundTag comp = stack.getTag();
                 if (comp == null) {
                     message(player, "lt.notset", pos.toString());
@@ -102,6 +84,22 @@ public class MultiLinkingTool extends Item {
                 message(player, "lt.reset");
                 return InteractionResult.FAIL;
             } else {
+                if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
+
+                    CompoundTag tag = stack.getTag();
+                    if (tag == null)
+                        tag = new CompoundTag();
+                    ListTag list = (ListTag) tag.get(LINKED_BLOCKS);
+                    if (list == null)
+                        list = new ListTag();
+                    list.add(NbtUtils.writeBlockPos(pos));
+                    tag.put(LINKED_BLOCKS, list);
+                    tagFromFunction.test(levelIn, pos, tag);
+                    stack.setTag(tag);
+                    message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+                    message(player, "lt.setpos.msg");
+                    return InteractionResult.SUCCESS;
+                }
                 if (controller.hasLink() && controller.unlink()) {
                     message(player, "lt.unlink");
                     return InteractionResult.SUCCESS;
