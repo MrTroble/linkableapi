@@ -80,8 +80,26 @@ public class Linkingtool extends Item {
                 message(player, "lt.notlinked.msg");
                 return EnumActionResult.FAIL;
             } else {
+                if (controller.canBeLinked() && predicate.test(worldIn, pos)) {
+                    final NBTTagCompound tag = stack.getTagCompound();
+                    if (tag != null) {
+                        final boolean containsPos = tag.hasKey("X") && tag.hasKey("Y")
+                                && tag.hasKey("Z");
+                        if (containsPos) {
+                            message(player, "lt.setpos.msg");
+                            return EnumActionResult.FAIL;
+                        }
+                    }
+                    final NBTTagCompound comp = NBTUtil.createPosTag(pos);
+                    tagFromFunction.test(worldIn, pos, comp);
+                    stack.setTagCompound(comp);
+                    message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+                    message(player, "lt.setpos.msg");
+                    return EnumActionResult.SUCCESS;
+                }
                 if (controller.hasLink() && controller.unlink()) {
                     message(player, "lt.unlink");
+                    return EnumActionResult.SUCCESS;
                 }
             }
             return EnumActionResult.SUCCESS;
