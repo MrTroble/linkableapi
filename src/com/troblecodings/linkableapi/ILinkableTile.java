@@ -17,5 +17,8 @@ public interface ILinkableTile {
     }
 
     boolean unlink();
-
+    
+    default boolean canBeLinked() {
+        return false;
+    }
 }

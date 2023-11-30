@@ -84,8 +84,25 @@ public class MultiLinkingTool extends Item {
                 message(player, "lt.reset");
                 return ActionResultType.FAIL;
             } else {
+                if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
+
+                    CompoundNBT tag = stack.getTag();
+                    if (tag == null)
+                        tag = new CompoundNBT();
+                    ListNBT list = (ListNBT) tag.get(LINKED_BLOCKS);
+                    if (list == null)
+                        list = new ListNBT();
+                    list.add(NBTUtil.writeBlockPos(pos));
+                    tag.put(LINKED_BLOCKS, list);
+                    tagFromFunction.test(levelIn, pos, tag);
+                    stack.setTag(tag);
+                    message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+                    message(player, "lt.setpos.msg");
+                    return ActionResultType.SUCCESS;
+                }
                 if (controller.hasLink() && controller.unlink()) {
                     message(player, "lt.unlink");
+                    return ActionResultType.SUCCESS;
                 }
             }
             return ActionResultType.SUCCESS;
