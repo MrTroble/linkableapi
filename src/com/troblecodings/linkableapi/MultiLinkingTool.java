@@ -40,7 +40,7 @@ public class MultiLinkingTool extends Item {
             final BiPredicate<Level, BlockPos> predicate) {
         this(tab, predicate, _u -> true);
     }
-
+    
     public MultiLinkingTool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
         super(new Properties().durability(64).setNoRepair());
@@ -58,7 +58,7 @@ public class MultiLinkingTool extends Item {
         this(tab, predicate, predicateSet, (_u1, _u2, _u3) -> {
         });
     }
-
+    
     private void onTab(final CreativeModeTabEvent.BuildContents ev) {
         if (ev.getTab().equals(tab))
             ev.accept(() -> this);
@@ -89,15 +89,32 @@ public class MultiLinkingTool extends Item {
                 }
                 list.stream().map(tag -> NbtUtils.readBlockPos((CompoundTag) tag))
                         .forEach(linkPos -> {
-                            if (controller.link(linkPos))
+                            if (controller.link(linkPos, comp))
                                 message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                         });
                 stack.setTag(null);
                 message(player, "lt.reset");
                 return InteractionResult.FAIL;
             } else {
+                if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
+
+                    CompoundTag tag = stack.getTag();
+                    if (tag == null)
+                        tag = new CompoundTag();
+                    ListTag list = (ListTag) tag.get(LINKED_BLOCKS);
+                    if (list == null)
+                        list = new ListTag();
+                    list.add(NbtUtils.writeBlockPos(pos));
+                    tag.put(LINKED_BLOCKS, list);
+                    tagFromFunction.test(levelIn, pos, tag);
+                    stack.setTag(tag);
+                    message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+                    message(player, "lt.setpos.msg");
+                    return InteractionResult.SUCCESS;
+                }
                 if (controller.hasLink() && controller.unlink()) {
                     message(player, "lt.unlink");
+                    return InteractionResult.SUCCESS;
                 }
             }
             return InteractionResult.SUCCESS;
@@ -151,8 +168,8 @@ public class MultiLinkingTool extends Item {
         player.sendSystemMessage(getComponent(text, obj));
     }
 
+    @Override
     public MutableComponent getComponent(final String text, final Object... obj) {
         return MutableComponent.create(new TranslatableContents(text, text, obj));
     }
-
 }

@@ -30,6 +30,7 @@ public class Linkingtool extends Item implements Message {
     private final BiPredicate<Level, BlockPos> predicate;
     private final Predicate<BlockEntity> predicateSet;
     private final CreativeModeTab tab;
+    private final TaggableFunction tagFromFunction;
 
     public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate) {
         this(tab, predicate, _u -> true);
@@ -37,10 +38,17 @@ public class Linkingtool extends Item implements Message {
 
     public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet) {
-        super(new Properties());
+        this(tab, predicate, predicateSet, (_u1, _u2, _u3) -> {
+        });
+    }
+
+    public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
+            final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
+        super(new Properties().durability(64).setNoRepair());
         this.predicate = predicate;
         this.predicateSet = predicateSet;
         this.tab = tab;
+        this.tagFromFunction = function;
         if (tab != null) {
             FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onTab);
         }
@@ -55,6 +63,8 @@ public class Linkingtool extends Item implements Message {
     public InteractionResult onItemUseFirst(final ItemStack stack, final UseOnContext ctx) {
         final Level levelIn = ctx.getLevel();
         final Player player = ctx.getPlayer();
+        if (player == null)
+            return InteractionResult.FAIL;
         final BlockPos pos = ctx.getClickedPos();
         if (levelIn.isClientSide)
             return InteractionResult.PASS;
@@ -67,8 +77,8 @@ public class Linkingtool extends Item implements Message {
                     message(player, "lt.notset", pos.toString());
                     return InteractionResult.PASS;
                 }
-                final BlockPos lpos = NbtUtils.readBlockPos(comp);
-                if (controller.link(lpos)) {
+                final BlockPos linkedPos = NbtUtils.readBlockPos(comp);
+                if (controller.link(linkedPos, comp)) {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                     stack.setTag(null);
                     message(player, "lt.reset");
@@ -78,17 +88,41 @@ public class Linkingtool extends Item implements Message {
                 message(player, "lt.notlinked.msg");
                 return InteractionResult.FAIL;
             } else {
+                if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
+                    final CompoundTag tag = stack.getTag();
+                    if (tag != null) {
+                        final boolean containsPos = tag.contains("X") && tag.contains("Y")
+                                && tag.contains("Z");
+                        if (containsPos) {
+                            message(player, "lt.setpos.msg");
+                            return InteractionResult.FAIL;
+                        }
+                    }
+                    final CompoundTag comp = NbtUtils.writeBlockPos(pos);
+                    tagFromFunction.test(levelIn, pos, comp);
+                    stack.setTag(comp);
+                    message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+                    message(player, "lt.setpos.msg");
+                    return InteractionResult.SUCCESS;
+                }
                 if (controller.hasLink() && controller.unlink()) {
                     message(player, "lt.unlink");
+                    return InteractionResult.SUCCESS;
                 }
             }
             return InteractionResult.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
-            if (stack.getTag() != null) {
-                message(player, "lt.setpos.msg");
-                return InteractionResult.FAIL;
+            final CompoundTag tag = stack.getTag();
+            if (tag != null) {
+                final boolean containsPos = tag.contains("X") && tag.contains("Y")
+                        && tag.contains("Z");
+                if (containsPos) {
+                    message(player, "lt.setpos.msg");
+                    return InteractionResult.FAIL;
+                }
             }
             final CompoundTag comp = NbtUtils.writeBlockPos(pos);
+            tagFromFunction.test(levelIn, pos, comp);
             stack.setTag(comp);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
@@ -104,10 +138,11 @@ public class Linkingtool extends Item implements Message {
     @Override
     public void appendHoverText(final ItemStack stack, @Nullable final Level levelIn,
             final List<Component> tooltip, final TooltipFlag flagIn) {
-        final CompoundTag nbt = stack.getTag();
-        if (nbt != null) {
-            final BlockPos pos = NbtUtils.readBlockPos(nbt);
-            if (pos != null) {
+        final CompoundTag tag = stack.getTag();
+        if (tag != null) {
+            final boolean containsPos = tag.contains("X") && tag.contains("Y") && tag.contains("Z");
+            if (containsPos) {
+                final BlockPos pos = NbtUtils.readBlockPos(tag);
                 tooltip(tooltip, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                 return;
             }
