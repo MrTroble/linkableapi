@@ -27,7 +27,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.event.CreativeModeTabEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
-public class MultiLinkingTool extends Item {
+public class MultiLinkingTool extends Item implements Message {
 
     private static final String LINKED_BLOCKS = "linkedBlocks";
 
@@ -164,6 +164,7 @@ public class MultiLinkingTool extends Item {
         list.add(getComponent(text, obj));
     }
 
+    @Override
     public void message(final Player player, final String text, final Object... obj) {
         player.sendSystemMessage(getComponent(text, obj));
     }
