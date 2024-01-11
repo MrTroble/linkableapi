@@ -25,6 +25,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class Linkingtool extends Item {
 
+    private static final String LINKINGTOOL_TAG = "linkingToolTag";
+
     private final BiPredicate<Level, BlockPos> predicate;
     private final Predicate<BlockEntity> predicateSet;
     private final TaggableFunction tagFromFunction;
@@ -57,18 +59,19 @@ public class Linkingtool extends Item {
         if (levelIn.isClientSide)
             return InteractionResult.PASS;
         final BlockEntity entity = levelIn.getBlockEntity(pos);
+        final CompoundTag itemTag = stack.getOrCreateTag();
+        final CompoundTag toolTag = itemTag.getCompound(LINKINGTOOL_TAG);
         if (entity instanceof ILinkableTile && this.predicateSet.apply(entity)) {
             final ILinkableTile controller = (ILinkableTile) entity;
             if (!player.isShiftKeyDown()) {
-                final CompoundTag comp = stack.getTag();
-                if (comp == null) {
+                if (toolTag == null) {
                     message(player, "lt.notset", pos.toString());
                     return InteractionResult.PASS;
                 }
-                final BlockPos linkedPos = NbtUtils.readBlockPos(comp);
-                if (controller.link(linkedPos, comp)) {
+                final BlockPos linkedPos = NbtUtils.readBlockPos(toolTag);
+                if (controller.link(linkedPos, toolTag)) {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
-                    stack.setTag(null);
+                    removeToolTag(stack);
                     message(player, "lt.reset");
                     return InteractionResult.FAIL;
                 }
@@ -77,18 +80,16 @@ public class Linkingtool extends Item {
                 return InteractionResult.FAIL;
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
-                    final CompoundTag tag = stack.getTag();
-                    if (tag != null) {
-                        final boolean containsPos = tag.contains("X") && tag.contains("Y")
-                                && tag.contains("Z");
-                        if (containsPos) {
-                            message(player, "lt.setpos.msg");
-                            return InteractionResult.FAIL;
-                        }
+                    final boolean containsPos = toolTag.contains("X") && toolTag.contains("Y")
+                            && toolTag.contains("Z");
+                    if (containsPos) {
+                        message(player, "lt.setpos.msg");
+                        return InteractionResult.FAIL;
                     }
-                    final CompoundTag comp = NbtUtils.writeBlockPos(pos);
-                    tagFromFunction.test(levelIn, pos, comp);
-                    stack.setTag(comp);
+
+                    final CompoundTag newToolTag = NbtUtils.writeBlockPos(pos);
+                    tagFromFunction.test(levelIn, pos, newToolTag);
+                    itemTag.put(LINKINGTOOL_TAG, newToolTag);
                     message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
                     message(player, "lt.setpos.msg");
                     return InteractionResult.SUCCESS;
@@ -100,37 +101,40 @@ public class Linkingtool extends Item {
             }
             return InteractionResult.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
-            final CompoundTag tag = stack.getTag();
-            if (tag != null) {
-                final boolean containsPos = tag.contains("X") && tag.contains("Y")
-                        && tag.contains("Z");
-                if (containsPos) {
-                    message(player, "lt.setpos.msg");
-                    return InteractionResult.FAIL;
-                }
+            final boolean containsPos = toolTag.contains("X") && toolTag.contains("Y")
+                    && toolTag.contains("Z");
+            if (containsPos) {
+                message(player, "lt.setpos.msg");
+                return InteractionResult.FAIL;
             }
-            final CompoundTag comp = NbtUtils.writeBlockPos(pos);
-            tagFromFunction.test(levelIn, pos, comp);
-            stack.setTag(comp);
+            final CompoundTag newToolTag = NbtUtils.writeBlockPos(pos);
+            tagFromFunction.test(levelIn, pos, newToolTag);
+            itemTag.put(LINKINGTOOL_TAG, newToolTag);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return InteractionResult.SUCCESS;
-        } else if (player.isShiftKeyDown() && stack.getTag() != null) {
-            stack.setTag(null);
+        } else if (player.isShiftKeyDown()) {
+            removeToolTag(stack);
             message(player, "lt.reset");
             return InteractionResult.SUCCESS;
         }
         return InteractionResult.FAIL;
     }
 
+    private void removeToolTag(final ItemStack stack) {
+        stack.getOrCreateTag().remove(LINKINGTOOL_TAG);
+    }
+
     @Override
     public void appendHoverText(final ItemStack stack, @Nullable final Level levelIn,
             final List<Component> tooltip, final TooltipFlag flagIn) {
-        final CompoundTag tag = stack.getTag();
-        if (tag != null) {
-            final boolean containsPos = tag.contains("X") && tag.contains("Y") && tag.contains("Z");
+        final CompoundTag tag = stack.getOrCreateTag();
+        if (tag.contains(LINKINGTOOL_TAG)) {
+            final CompoundTag comp = tag.getCompound(LINKINGTOOL_TAG);
+            final boolean containsPos = comp.contains("X") && comp.contains("Y")
+                    && comp.contains("Z");
             if (containsPos) {
-                final BlockPos pos = NbtUtils.readBlockPos(tag);
+                final BlockPos pos = NbtUtils.readBlockPos(comp);
                 tooltip(tooltip, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                 return;
             }
@@ -139,10 +143,7 @@ public class Linkingtool extends Item {
         tooltip(tooltip, "lt.notlinked.msg");
     }
 
-    @SuppressWarnings({
-            "rawtypes", "unchecked"
-    })
-    public void tooltip(final List list, final String text, final Object... obj) {
+    public void tooltip(final List<Component> list, final String text, final Object... obj) {
         list.add(getComponent(text, obj));
     }
 
