@@ -5,11 +5,12 @@ import java.util.function.BiPredicate;
 
 import com.google.common.base.Predicate;
 
+import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroups;
+import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
 import net.minecraft.nbt.NbtCompound;
@@ -23,18 +24,16 @@ public class Linkingtool extends Item implements Message {
 
     private final BiPredicate<World, BlockPos> predicate;
     private final Predicate<BlockEntity> predicateSet;
-    private final ItemGroups tab;
 
-    public Linkingtool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate) {
+    public Linkingtool(final ItemGroup tab, final BiPredicate<World, BlockPos> predicate) {
         this(tab, predicate, _u -> true);
     }
 
-    public Linkingtool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate,
+    public Linkingtool(final ItemGroup tab, final BiPredicate<World, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet) {
-        super(new Settings());
+        super(new FabricItemSettings().group(tab));
         this.predicate = predicate;
         this.predicateSet = predicateSet;
-        this.tab = tab;
     }
     
     @Override

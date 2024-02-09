@@ -11,15 +11,15 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroups;
+import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtHelper;
 import net.minecraft.nbt.NbtList;
-import net.minecraft.text.MutableText;
+import net.minecraft.text.BaseText;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableTextContent;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -30,24 +30,22 @@ public class MultiLinkingTool extends Item {
 
     private final BiPredicate<World, BlockPos> predicate;
     private final Predicate<BlockEntity> predicateSet;
-    private final ItemGroups tab;
     private final TaggableFunction tagFromFunction;
 
-    public MultiLinkingTool(final ItemGroups tab,
+    public MultiLinkingTool(final ItemGroup tab,
             final BiPredicate<World, BlockPos> predicate) {
         this(tab, predicate, _u -> true);
     }
 
-    public MultiLinkingTool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate,
+    public MultiLinkingTool(final ItemGroup tab, final BiPredicate<World, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
-        super(new FabricItemSettings().maxDamage(64));
+        super(new FabricItemSettings().maxDamage(64).group(tab));
         this.predicate = predicate;
         this.predicateSet = predicateSet;
         this.tagFromFunction = function;
-        this.tab = tab;
     }
 
-    public MultiLinkingTool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate,
+    public MultiLinkingTool(final ItemGroup tab, final BiPredicate<World, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet) {
         this(tab, predicate, predicateSet, (_u1, _u2, _u3) -> {
         });
@@ -129,19 +127,16 @@ public class MultiLinkingTool extends Item {
         tooltip(tooltip, "lt.notlinked.msg");
     }
 
-    @SuppressWarnings({
-            "rawtypes", "unchecked"
-    })
-    public void tooltip(final List list, final String text, final Object... obj) {
+    public void tooltip(final List<Text> list, final String text, final Object... obj) {
         list.add(getComponent(text, obj));
     }
 
     public void message(final PlayerEntity player, final String text, final Object... obj) {
-        player.sendMessage(getComponent(text, obj));
+        player.sendMessage(getComponent(text, obj), false);
     }
 
-    public MutableText getComponent(final String text, final Object... obj) {
-        return MutableText.of(new TranslatableTextContent(text, text, obj));
+    public BaseText getComponent(final String text, final Object... obj) {
+        return new TranslatableText(text, obj);
     }
 
 }
