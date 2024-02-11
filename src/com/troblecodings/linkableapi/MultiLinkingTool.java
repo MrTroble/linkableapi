@@ -14,9 +14,9 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtHelper;
-import net.minecraft.nbt.NbtList;
 import net.minecraft.text.BaseText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
@@ -65,17 +65,17 @@ public class MultiLinkingTool extends Item {
         if (entity instanceof ILinkableTile && this.predicateSet.apply(entity)) {
             final ILinkableTile controller = (ILinkableTile) entity;
             if (!player.isSneaking()) {
-                final NbtCompound comp = stack.getTag();
+                final CompoundTag comp = stack.getTag();
                 if (comp == null) {
                     message(player, "lt.notset", pos.toString());
                     return ActionResult.PASS;
                 }
-                final NbtList list = (NbtList) comp.get(LINKED_BLOCKS);
+                final ListTag list = (ListTag) comp.get(LINKED_BLOCKS);
                 if (list == null) {
                     message(player, "lt.notlinked");
                     return ActionResult.FAIL;
                 }
-                list.stream().map(tag -> NbtHelper.toBlockPos((NbtCompound) tag))
+                list.stream().map(tag -> NbtHelper.toBlockPos((CompoundTag) tag))
                         .forEach(linkPos -> {
                             if (controller.link(linkPos))
                                 message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
@@ -90,12 +90,12 @@ public class MultiLinkingTool extends Item {
             }
             return ActionResult.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
-            NbtCompound tag = stack.getTag();
+            CompoundTag tag = stack.getTag();
             if (tag == null)
-                tag = new NbtCompound();
-            NbtList list = (NbtList) tag.get(LINKED_BLOCKS);
+                tag = new CompoundTag();
+            ListTag list = (ListTag) tag.get(LINKED_BLOCKS);
             if (list == null)
-                list = new NbtList();
+                list = new ListTag();
             list.add(NbtHelper.fromBlockPos(pos));
             tag.put(LINKED_BLOCKS, list);
             tagFromFunction.test(levelIn, pos, tag);
@@ -113,12 +113,12 @@ public class MultiLinkingTool extends Item {
 
     @Override
     public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
-        final NbtCompound itemTag = stack.getTag();
+        final CompoundTag itemTag = stack.getTag();
         if (itemTag != null) {
-            final NbtList list = (NbtList) itemTag.get(LINKED_BLOCKS);
+            final ListTag list = (ListTag) itemTag.get(LINKED_BLOCKS);
             if (list != null) {
                 tooltip(tooltip, "lt.linkedpos",
-                        list.stream().map(tag -> NbtHelper.toBlockPos((NbtCompound) tag))
+                        list.stream().map(tag -> NbtHelper.toBlockPos((CompoundTag) tag))
                                 .collect(Collectors.toList()));
                 return;
             }
@@ -132,7 +132,7 @@ public class MultiLinkingTool extends Item {
     }
 
     public void message(final PlayerEntity player, final String text, final Object... obj) {
-        player.sendMessage(getComponent(text, obj), false);
+        player.sendMessage(getComponent(text, obj));
     }
 
     public BaseText getComponent(final String text, final Object... obj) {

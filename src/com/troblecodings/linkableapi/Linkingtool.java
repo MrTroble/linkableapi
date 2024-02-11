@@ -13,7 +13,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtHelper;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -48,7 +48,7 @@ public class Linkingtool extends Item implements Message {
         if (entity instanceof ILinkableTile && this.predicateSet.apply(entity)) {
             final ILinkableTile controller = (ILinkableTile) entity;
             if (!player.isSneaking()) {
-                final NbtCompound comp = stack.getTag();
+                final CompoundTag comp = stack.getTag();
                 if (comp == null) {
                     message(player, "lt.notset", pos.toString());
                     return ActionResult.PASS;
@@ -74,7 +74,7 @@ public class Linkingtool extends Item implements Message {
                 message(player, "lt.setpos.msg");
                 return ActionResult.FAIL;
             }
-            final NbtCompound comp = NbtHelper.fromBlockPos(pos);
+            final CompoundTag comp = NbtHelper.fromBlockPos(pos);
             stack.setTag(comp);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
@@ -89,7 +89,7 @@ public class Linkingtool extends Item implements Message {
     
     @Override
     public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
-    	final NbtCompound nbt = stack.getTag();
+    	final CompoundTag nbt = stack.getTag();
         if (nbt != null) {
             final BlockPos pos = NbtHelper.toBlockPos(nbt);
             if (pos != null) {

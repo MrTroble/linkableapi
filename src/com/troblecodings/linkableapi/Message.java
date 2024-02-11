@@ -7,7 +7,7 @@ import net.minecraft.text.TranslatableText;
 public interface Message {
 
     default void message(final PlayerEntity player, final String text, final Object... obj) {
-        player.sendMessage(getComponent(text, obj), false);
+        player.sendMessage(getComponent(text, obj));
     }
 
     default BaseText getComponent(final String text, final Object... obj) {
