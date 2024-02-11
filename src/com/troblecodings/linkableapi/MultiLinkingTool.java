@@ -65,7 +65,7 @@ public class MultiLinkingTool extends Item {
         if (entity instanceof ILinkableTile && this.predicateSet.apply(entity)) {
             final ILinkableTile controller = (ILinkableTile) entity;
             if (!player.isSneaking()) {
-                final NbtCompound comp = stack.getNbt();
+                final NbtCompound comp = stack.getTag();
                 if (comp == null) {
                     message(player, "lt.notset", pos.toString());
                     return ActionResult.PASS;
@@ -80,7 +80,7 @@ public class MultiLinkingTool extends Item {
                             if (controller.link(linkPos))
                                 message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                         });
-                stack.setNbt(null);
+                stack.setTag(null);
                 message(player, "lt.reset");
                 return ActionResult.FAIL;
             } else {
@@ -90,7 +90,7 @@ public class MultiLinkingTool extends Item {
             }
             return ActionResult.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
-            NbtCompound tag = stack.getNbt();
+            NbtCompound tag = stack.getTag();
             if (tag == null)
                 tag = new NbtCompound();
             NbtList list = (NbtList) tag.get(LINKED_BLOCKS);
@@ -99,12 +99,12 @@ public class MultiLinkingTool extends Item {
             list.add(NbtHelper.fromBlockPos(pos));
             tag.put(LINKED_BLOCKS, list);
             tagFromFunction.test(levelIn, pos, tag);
-            stack.setNbt(tag);
+            stack.setTag(tag);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return ActionResult.SUCCESS;
-        } else if (player.isSneaking() && stack.getNbt() != null) {
-            stack.setNbt(null);
+        } else if (player.isSneaking() && stack.getTag() != null) {
+            stack.setTag(null);
             message(player, "lt.reset");
             return ActionResult.SUCCESS;
         }
@@ -113,7 +113,7 @@ public class MultiLinkingTool extends Item {
 
     @Override
     public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
-        final NbtCompound itemTag = stack.getNbt();
+        final NbtCompound itemTag = stack.getTag();
         if (itemTag != null) {
             final NbtList list = (NbtList) itemTag.get(LINKED_BLOCKS);
             if (list != null) {

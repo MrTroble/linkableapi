@@ -48,7 +48,7 @@ public class Linkingtool extends Item implements Message {
         if (entity instanceof ILinkableTile && this.predicateSet.apply(entity)) {
             final ILinkableTile controller = (ILinkableTile) entity;
             if (!player.isSneaking()) {
-                final NbtCompound comp = stack.getNbt();
+                final NbtCompound comp = stack.getTag();
                 if (comp == null) {
                     message(player, "lt.notset", pos.toString());
                     return ActionResult.PASS;
@@ -56,7 +56,7 @@ public class Linkingtool extends Item implements Message {
                 final BlockPos lpos = NbtHelper.toBlockPos(comp);
                 if (controller.link(lpos)) {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
-                    stack.setNbt(null);
+                    stack.setTag(null);
                     message(player, "lt.reset");
                     return ActionResult.FAIL;
                 }
@@ -70,17 +70,17 @@ public class Linkingtool extends Item implements Message {
             }
             return ActionResult.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
-            if (stack.getNbt() != null) {
+            if (stack.getTag() != null) {
                 message(player, "lt.setpos.msg");
                 return ActionResult.FAIL;
             }
             final NbtCompound comp = NbtHelper.fromBlockPos(pos);
-            stack.setNbt(comp);
+            stack.setTag(comp);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return ActionResult.SUCCESS;
-        } else if (player.isSneaking() && stack.getNbt() != null) {
-            stack.setNbt(null);
+        } else if (player.isSneaking() && stack.getTag() != null) {
+            stack.setTag(null);
             message(player, "lt.reset");
             return ActionResult.SUCCESS;
         }
@@ -89,7 +89,7 @@ public class Linkingtool extends Item implements Message {
     
     @Override
     public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
-    	final NbtCompound nbt = stack.getNbt();
+    	final NbtCompound nbt = stack.getTag();
         if (nbt != null) {
             final BlockPos pos = NbtHelper.toBlockPos(nbt);
             if (pos != null) {
