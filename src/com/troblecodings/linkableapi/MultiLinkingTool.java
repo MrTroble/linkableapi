@@ -29,6 +29,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class MultiLinkingTool extends Item {
 
+    private static final String MULTILINKINGTOOL_TAG = "multiLinkingToolTag";
     private static final String LINKED_BLOCKS = "linkedBlocks";
 
     private final BiPredicate<World, BlockPos> predicate;
@@ -67,38 +68,36 @@ public class MultiLinkingTool extends Item {
             return EnumActionResult.PASS;
         final TileEntity entity = levelIn.getTileEntity(pos);
         final ItemStack stack = player.getHeldItem(hand);
+        final NBTTagCompound itemTag = getOrCreateForStack(stack);
+        final NBTTagCompound toolTag = itemTag.getCompoundTag(MULTILINKINGTOOL_TAG);
         if (entity instanceof ILinkableTile && this.predicateSet.apply(entity)) {
             final ILinkableTile controller = (ILinkableTile) entity;
             if (!player.isSneaking()) {
-                final NBTTagCompound comp = stack.getTagCompound();
-                if (comp == null) {
+                if (toolTag == null) {
                     message(player, "lt.notset", pos.toString());
                     return EnumActionResult.PASS;
                 }
-                final NBTTagList list = (NBTTagList) comp.getTag(LINKED_BLOCKS);
+                final NBTTagList list = (NBTTagList) toolTag.getTag(LINKED_BLOCKS);
                 if (list == null) {
                     message(player, "lt.notlinked");
                     return EnumActionResult.FAIL;
                 }
                 list.forEach(tag -> {
-                    if (controller.link(NBTUtil.getPosFromTag((NBTTagCompound) tag), comp))
+                    if (controller.link(NBTUtil.getPosFromTag((NBTTagCompound) tag), toolTag))
                         message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                 });
-                stack.setTagCompound(null);
+                removeToolTag(stack);
                 message(player, "lt.reset");
                 return EnumActionResult.FAIL;
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
-                    NBTTagCompound tag = stack.getTagCompound();
-                    if (tag == null)
-                        tag = new NBTTagCompound();
-                    NBTTagList list = (NBTTagList) tag.getTag(LINKED_BLOCKS);
+                    NBTTagList list = (NBTTagList) toolTag.getTag(LINKED_BLOCKS);
                     if (list == null)
                         list = new NBTTagList();
                     list.appendTag(NBTUtil.createPosTag(pos));
-                    tag.setTag(LINKED_BLOCKS, list);
-                    tagFromFunction.test(levelIn, pos, tag);
-                    stack.setTagCompound(tag);
+                    toolTag.setTag(LINKED_BLOCKS, list);
+                    tagFromFunction.test(levelIn, pos, toolTag);
+                    itemTag.setTag(MULTILINKINGTOOL_TAG, toolTag);
                     message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
                     message(player, "lt.setpos.msg");
                     return EnumActionResult.SUCCESS;
@@ -110,34 +109,36 @@ public class MultiLinkingTool extends Item {
             }
             return EnumActionResult.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
-            NBTTagCompound tag = stack.getTagCompound();
-            if (tag == null)
-                tag = new NBTTagCompound();
-            NBTTagList list = (NBTTagList) tag.getTag(LINKED_BLOCKS);
+            NBTTagList list = (NBTTagList) toolTag.getTag(LINKED_BLOCKS);
             if (list == null)
                 list = new NBTTagList();
             list.appendTag(NBTUtil.createPosTag(pos));
-            tag.setTag(LINKED_BLOCKS, list);
-            tagFromFunction.test(levelIn, pos, tag);
-            stack.setTagCompound(tag);
+            toolTag.setTag(LINKED_BLOCKS, list);
+            tagFromFunction.test(levelIn, pos, toolTag);
+            toolTag.setTag(LINKED_BLOCKS, list);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return EnumActionResult.SUCCESS;
         } else if (player.isSneaking() && stack.getTagCompound() != null) {
-            stack.setTagCompound(null);
+            removeToolTag(stack);
             message(player, "lt.reset");
             return EnumActionResult.SUCCESS;
         }
         return EnumActionResult.FAIL;
     }
 
+    private void removeToolTag(final ItemStack stack) {
+        getOrCreateForStack(stack).removeTag(MULTILINKINGTOOL_TAG);
+    }
+
     @SideOnly(Side.CLIENT)
     @Override
     public void addInformation(final ItemStack stack, @Nullable final World levelIn,
             final List<String> tooltip, final ITooltipFlag flagIn) {
-        final NBTTagCompound itemTag = stack.getTagCompound();
-        if (itemTag != null) {
-            final NBTTagList list = (NBTTagList) itemTag.getTag(LINKED_BLOCKS);
+        final NBTTagCompound itemTag = getOrCreateForStack(stack);
+        final NBTTagCompound toolTag = itemTag.getCompoundTag(MULTILINKINGTOOL_TAG);
+        if (toolTag != null) {
+            final NBTTagList list = (NBTTagList) toolTag.getTag(LINKED_BLOCKS);
             if (list != null) {
                 final List<BlockPos> linkedPos = new ArrayList<>();
                 list.forEach(tag -> linkedPos.add(NBTUtil.getPosFromTag((NBTTagCompound) tag)));
@@ -147,6 +148,15 @@ public class MultiLinkingTool extends Item {
         }
         tooltip.add(I18n.format("lt.notlinked"));
         tooltip.add(I18n.format("lt.notlinked.msg"));
+    }
+
+    private static NBTTagCompound getOrCreateForStack(final ItemStack stack) {
+        NBTTagCompound tag = stack.getTagCompound();
+        if (tag == null) {
+            tag = new NBTTagCompound();
+            stack.setTagCompound(tag);
+        }
+        return tag;
     }
 
     public void message(final EntityPlayer player, final String text, final Object... obj) {

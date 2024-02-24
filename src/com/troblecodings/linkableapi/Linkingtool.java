@@ -26,6 +26,8 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class Linkingtool extends Item {
 
+    private static final String LINKINGTOOL_TAG = "linkingToolTag";
+
     private final BiPredicate<World, BlockPos> predicate;
     private final Predicate<TileEntity> predicateSet;
     private final TaggableFunction tagFromFunction;
@@ -61,18 +63,19 @@ public class Linkingtool extends Item {
             return EnumActionResult.PASS;
         final TileEntity entity = worldIn.getTileEntity(pos);
         final ItemStack stack = player.getHeldItem(hand);
+        final NBTTagCompound itemTag = getOrCreateForStack(stack);
+        final NBTTagCompound toolTag = itemTag.getCompoundTag(LINKINGTOOL_TAG);
         if (entity instanceof ILinkableTile && this.predicateSet.apply(entity)) {
             final ILinkableTile controller = (ILinkableTile) entity;
             if (!player.isSneaking()) {
-                final NBTTagCompound comp = stack.getTagCompound();
-                if (comp == null) {
+                if (toolTag == null) {
                     message(player, "lt.notset", pos.toString());
                     return EnumActionResult.PASS;
                 }
-                final BlockPos linkedPos = NBTUtil.getPosFromTag(comp);
-                if (controller.link(linkedPos, comp)) {
+                final BlockPos linkedPos = NBTUtil.getPosFromTag(toolTag);
+                if (controller.link(linkedPos, toolTag)) {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
-                    stack.setTagCompound(null);
+                    removeToolTag(stack);
                     message(player, "lt.reset");
                     return EnumActionResult.FAIL;
                 }
@@ -81,18 +84,15 @@ public class Linkingtool extends Item {
                 return EnumActionResult.FAIL;
             } else {
                 if (controller.canBeLinked() && predicate.test(worldIn, pos)) {
-                    final NBTTagCompound tag = stack.getTagCompound();
-                    if (tag != null) {
-                        final boolean containsPos = tag.hasKey("X") && tag.hasKey("Y")
-                                && tag.hasKey("Z");
-                        if (containsPos) {
-                            message(player, "lt.setpos.msg");
-                            return EnumActionResult.FAIL;
-                        }
+                    final boolean containsPos = toolTag.hasKey("X") && toolTag.hasKey("Y")
+                            && toolTag.hasKey("Z");
+                    if (containsPos) {
+                        message(player, "lt.setpos.msg");
+                        return EnumActionResult.FAIL;
                     }
-                    final NBTTagCompound comp = NBTUtil.createPosTag(pos);
-                    tagFromFunction.test(worldIn, pos, comp);
-                    stack.setTagCompound(comp);
+                    final NBTTagCompound newToolTag = NBTUtil.createPosTag(pos);
+                    tagFromFunction.test(worldIn, pos, newToolTag);
+                    itemTag.setTag(LINKINGTOOL_TAG, toolTag);
                     message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
                     message(player, "lt.setpos.msg");
                     return EnumActionResult.SUCCESS;
@@ -104,37 +104,40 @@ public class Linkingtool extends Item {
             }
             return EnumActionResult.SUCCESS;
         } else if (predicate.test(worldIn, pos)) {
-            final NBTTagCompound tag = stack.getTagCompound();
-            if (tag != null) {
-                final boolean containsPos = tag.hasKey("X") && tag.hasKey("Y") && tag.hasKey("Z");
-                if (containsPos) {
-                    message(player, "lt.setpos.msg");
-                    return EnumActionResult.FAIL;
-                }
+            final boolean containsPos = toolTag.hasKey("X") && toolTag.hasKey("Y")
+                    && toolTag.hasKey("Z");
+            if (containsPos) {
+                message(player, "lt.setpos.msg");
+                return EnumActionResult.FAIL;
             }
-            final NBTTagCompound comp = NBTUtil.createPosTag(pos);
-            tagFromFunction.test(worldIn, pos, comp);
-            stack.setTagCompound(comp);
+            final NBTTagCompound newToolTag = NBTUtil.createPosTag(pos);
+            tagFromFunction.test(worldIn, pos, newToolTag);
+            itemTag.setTag(LINKINGTOOL_TAG, toolTag);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return EnumActionResult.SUCCESS;
-        } else if (player.isSneaking() && stack.getTagCompound() != null) {
-            stack.setTagCompound(null);
+        } else if (player.isSneaking()) {
+            removeToolTag(stack);
             message(player, "lt.reset");
             return EnumActionResult.SUCCESS;
         }
         return EnumActionResult.FAIL;
     }
 
+    private void removeToolTag(final ItemStack stack) {
+        getOrCreateForStack(stack).removeTag(LINKINGTOOL_TAG);
+    }
+
     @SideOnly(Side.CLIENT)
     @Override
     public void addInformation(final ItemStack stack, final World worldIn,
             final List<String> tooltip, final ITooltipFlag flagIn) {
-        final NBTTagCompound tag = stack.getTagCompound();
-        if (tag != null) {
-            final boolean containsPos = tag.hasKey("X") && tag.hasKey("Y") && tag.hasKey("Z");
+        final NBTTagCompound tag = getOrCreateForStack(stack);
+        if (tag.hasKey(LINKINGTOOL_TAG)) {
+            final NBTTagCompound comp = tag.getCompoundTag(LINKINGTOOL_TAG);
+            final boolean containsPos = comp.hasKey("X") && comp.hasKey("Y") && comp.hasKey("Z");
             if (containsPos) {
-                final BlockPos pos = NBTUtil.getPosFromTag(tag);
+                final BlockPos pos = NBTUtil.getPosFromTag(comp);
                 tooltip.add(I18n.format("lt.linkedpos", pos.getX(), pos.getY(), pos.getZ()));
                 return;
             }
@@ -143,11 +146,13 @@ public class Linkingtool extends Item {
         tooltip.add(I18n.format("lt.notlinked.msg"));
     }
 
-    @SuppressWarnings({
-            "rawtypes", "unchecked"
-    })
-    public void tooltip(final List list, final String text, final Object... obj) {
-        list.add(getComponent(text, obj));
+    private static NBTTagCompound getOrCreateForStack(final ItemStack stack) {
+        NBTTagCompound tag = stack.getTagCompound();
+        if (tag == null) {
+            tag = new NBTTagCompound();
+            stack.setTagCompound(tag);
+        }
+        return tag;
     }
 
     public void message(final EntityPlayer player, final String text, final Object... obj) {
