@@ -115,7 +115,7 @@ public class MultiLinkingTool extends Item {
             list.appendTag(NBTUtil.createPosTag(pos));
             toolTag.setTag(LINKED_BLOCKS, list);
             tagFromFunction.test(levelIn, pos, toolTag);
-            toolTag.setTag(LINKED_BLOCKS, list);
+            itemTag.setTag(MULTILINKINGTOOL_TAG, toolTag);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return EnumActionResult.SUCCESS;

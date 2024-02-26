@@ -92,7 +92,7 @@ public class Linkingtool extends Item {
                     }
                     final NBTTagCompound newToolTag = NBTUtil.createPosTag(pos);
                     tagFromFunction.test(worldIn, pos, newToolTag);
-                    itemTag.setTag(LINKINGTOOL_TAG, toolTag);
+                    itemTag.setTag(LINKINGTOOL_TAG, newToolTag);
                     message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
                     message(player, "lt.setpos.msg");
                     return EnumActionResult.SUCCESS;
@@ -112,7 +112,7 @@ public class Linkingtool extends Item {
             }
             final NBTTagCompound newToolTag = NBTUtil.createPosTag(pos);
             tagFromFunction.test(worldIn, pos, newToolTag);
-            itemTag.setTag(LINKINGTOOL_TAG, toolTag);
+            itemTag.setTag(LINKINGTOOL_TAG, newToolTag);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return EnumActionResult.SUCCESS;
