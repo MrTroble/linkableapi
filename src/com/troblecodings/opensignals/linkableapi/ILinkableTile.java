@@ -1,4 +1,4 @@
-package com.troblecodings.linkableapi;
+package com.troblecodings.opensignals.linkableapi;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
