@@ -27,9 +27,9 @@ public class Linkingtool extends Item {
 
     private static final String LINKINGTOOL_TAG = "linkingToolTag";
 
-    private final BiPredicate<Level, BlockPos> predicate;
-    private final Predicate<BlockEntity> predicateSet;
-    private final TaggableFunction tagFromFunction;
+    protected final BiPredicate<Level, BlockPos> predicate;
+    protected final Predicate<BlockEntity> predicateSet;
+    protected final TaggableFunction tagFromFunction;
 
     public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate) {
         this(tab, predicate, _u -> true);
