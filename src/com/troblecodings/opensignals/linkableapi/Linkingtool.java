@@ -73,6 +73,8 @@ public class Linkingtool extends Item {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                     removeToolTag(stack);
                     message(player, "lt.reset");
+                    stack.hurtAndBreak(1, player,
+                            (user) -> user.broadcastBreakEvent(ctx.getHand()));
                     return InteractionResult.FAIL;
                 }
                 message(player, "lt.notlinked");

@@ -73,6 +73,8 @@ public class MultiLinkingTool extends Linkingtool {
                         });
                 removeToolTag(stack);
                 message(player, "lt.reset");
+                stack.hurtAndBreak(list.size(), player,
+                        (user) -> user.broadcastBreakEvent(ctx.getHand()));
                 return InteractionResult.FAIL;
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
