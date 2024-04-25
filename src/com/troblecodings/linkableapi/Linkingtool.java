@@ -28,9 +28,9 @@ public class Linkingtool extends Item {
 
     private static final String LINKINGTOOL_TAG = "linkingToolTag";
 
-    private final BiPredicate<World, BlockPos> predicate;
-    private final Predicate<TileEntity> predicateSet;
-    private final TaggableFunction tagFromFunction;
+    protected final BiPredicate<World, BlockPos> predicate;
+    protected final Predicate<TileEntity> predicateSet;
+    protected final TaggableFunction tagFromFunction;
 
     public Linkingtool(final CreativeTabs tab, final BiPredicate<World, BlockPos> predicate) {
         this(tab, predicate, _u -> true);
@@ -77,6 +77,7 @@ public class Linkingtool extends Item {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                     removeToolTag(stack);
                     message(player, "lt.reset");
+                    stack.damageItem(1, player);
                     return EnumActionResult.FAIL;
                 }
                 message(player, "lt.notlinked");

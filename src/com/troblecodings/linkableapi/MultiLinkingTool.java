@@ -12,8 +12,8 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTUtil;
@@ -22,34 +22,22 @@ import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-public class MultiLinkingTool extends Item {
+public class MultiLinkingTool extends Linkingtool {
 
     private static final String MULTILINKINGTOOL_TAG = "multiLinkingToolTag";
     private static final String LINKED_BLOCKS = "linkedBlocks";
 
-    private final BiPredicate<World, BlockPos> predicate;
-    private final Predicate<TileEntity> predicateSet;
-    private final TaggableFunction tagFromFunction;
-
     public MultiLinkingTool(final CreativeTabs tab, final BiPredicate<World, BlockPos> predicate) {
-        this(tab, predicate, _u -> true);
+        super(tab, predicate, _u -> true);
     }
 
     public MultiLinkingTool(final CreativeTabs tab, final BiPredicate<World, BlockPos> predicate,
             final Predicate<TileEntity> predicateSet, final TaggableFunction function) {
-        setCreativeTab(tab);
-        setNoRepair();
-        setMaxDamage(64);
-        setMaxStackSize(1);
-        this.predicate = predicate;
-        this.predicateSet = predicateSet;
-        this.tagFromFunction = function;
-
+        super(tab, predicate, predicateSet, function);
     }
 
     public MultiLinkingTool(final CreativeTabs tab, final BiPredicate<World, BlockPos> predicate,
@@ -82,12 +70,14 @@ public class MultiLinkingTool extends Item {
                     message(player, "lt.notlinked");
                     return EnumActionResult.FAIL;
                 }
-                list.forEach(tag -> {
-                    if (controller.link(NBTUtil.getPosFromTag((NBTTagCompound) tag), toolTag))
+                for (final NBTBase tag : list) {
+                    if (controller.link(NBTUtil.getPosFromTag((NBTTagCompound) tag), toolTag)) {
                         message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
-                });
+                    }
+                }
                 removeToolTag(stack);
                 message(player, "lt.reset");
+                stack.damageItem(list.tagCount(), player);
                 return EnumActionResult.FAIL;
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
@@ -157,13 +147,5 @@ public class MultiLinkingTool extends Item {
             stack.setTagCompound(tag);
         }
         return tag;
-    }
-
-    public void message(final EntityPlayer player, final String text, final Object... obj) {
-        player.sendMessage(getComponent(text, obj));
-    }
-
-    public TextComponentTranslation getComponent(final String text, final Object... obj) {
-        return new TextComponentTranslation(text, obj);
     }
 }
