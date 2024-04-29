@@ -84,7 +84,14 @@ public class MultiLinkingTool extends Linkingtool {
                     NBTTagList list = (NBTTagList) toolTag.getTag(LINKED_BLOCKS);
                     if (list == null)
                         list = new NBTTagList();
-                    list.appendTag(NBTUtil.createPosTag(pos));
+                    final List<NBTBase> tagList = new ArrayList<>();
+                    list.forEach(tagList::add);
+                    final NBTTagCompound tag = NBTUtil.createPosTag(pos);
+                    if (tagList.contains(tag)) {
+                        message(player, "lt.setpos.msg");
+                        return EnumActionResult.FAIL;
+                    }
+                    list.appendTag(tag);
                     toolTag.setTag(LINKED_BLOCKS, list);
                     tagFromFunction.test(levelIn, pos, toolTag);
                     itemTag.setTag(MULTILINKINGTOOL_TAG, toolTag);
@@ -102,7 +109,14 @@ public class MultiLinkingTool extends Linkingtool {
             NBTTagList list = (NBTTagList) toolTag.getTag(LINKED_BLOCKS);
             if (list == null)
                 list = new NBTTagList();
-            list.appendTag(NBTUtil.createPosTag(pos));
+            final List<NBTBase> tagList = new ArrayList<>();
+            list.forEach(tagList::add);
+            final NBTTagCompound tag = NBTUtil.createPosTag(pos);
+            if (tagList.contains(tag)) {
+                message(player, "lt.setpos.msg");
+                return EnumActionResult.FAIL;
+            }
+            list.appendTag(tag);
             toolTag.setTag(LINKED_BLOCKS, list);
             tagFromFunction.test(levelIn, pos, toolTag);
             itemTag.setTag(MULTILINKINGTOOL_TAG, toolTag);
