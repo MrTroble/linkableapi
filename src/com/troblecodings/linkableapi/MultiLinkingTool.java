@@ -10,7 +10,6 @@ import com.google.common.base.Predicate;
 
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
@@ -21,35 +20,26 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
 
-public class MultiLinkingTool extends Item {
+public class MultiLinkingTool extends Linkingtool {
 
     private static final String LINKED_BLOCKS = "linkedBlocks";
     private static final String MULTILINKINGTOOL_TAG = "multiLinkingToolTag";
 
-    private final BiPredicate<World, BlockPos> predicate;
-    private final Predicate<TileEntity> predicateSet;
-    private final TaggableFunction tagFromFunction;
-
     public MultiLinkingTool(final ItemGroup tab, final BiPredicate<World, BlockPos> predicate) {
-        this(tab, predicate, _u -> true);
+        super(tab, predicate, _u -> true);
     }
 
     public MultiLinkingTool(final ItemGroup tab, final BiPredicate<World, BlockPos> predicate,
             final Predicate<TileEntity> predicateSet) {
-        this(tab, predicate, predicateSet, (_u1, _u2, _u3) -> {
+        super(tab, predicate, predicateSet, (_u1, _u2, _u3) -> {
         });
     }
 
     public MultiLinkingTool(final ItemGroup tab, final BiPredicate<World, BlockPos> predicate,
             final Predicate<TileEntity> predicateSet, final TaggableFunction function) {
-        super(new Properties().tab(tab).durability(64).setNoRepair());
-        this.predicate = predicate;
-        this.predicateSet = predicateSet;
-        this.tagFromFunction = function;
+        super(tab, predicate, predicateSet, function);
     }
 
     @Override
@@ -83,13 +73,20 @@ public class MultiLinkingTool extends Item {
                         });
                 removeToolTag(stack);
                 message(player, "lt.reset");
+                stack.hurtAndBreak(list.size(), player,
+                        (user) -> user.broadcastBreakEvent(ctx.getHand()));
                 return ActionResultType.FAIL;
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
                     ListNBT list = (ListNBT) toolTag.get(LINKED_BLOCKS);
                     if (list == null)
                         list = new ListNBT();
-                    list.add(NBTUtil.writeBlockPos(pos));
+                    final CompoundNBT posTag = NBTUtil.writeBlockPos(pos);
+                    if (list.contains(posTag)) {
+                        message(player, "lt.setpos.msg");
+                        return ActionResultType.FAIL;
+                    }
+                    list.add(posTag);
                     toolTag.put(LINKED_BLOCKS, list);
                     tagFromFunction.test(levelIn, pos, toolTag);
                     itemTag.put(MULTILINKINGTOOL_TAG, toolTag);
@@ -107,7 +104,12 @@ public class MultiLinkingTool extends Item {
             ListNBT list = (ListNBT) toolTag.get(LINKED_BLOCKS);
             if (list == null)
                 list = new ListNBT();
-            list.add(NBTUtil.writeBlockPos(pos));
+            final CompoundNBT posTag = NBTUtil.writeBlockPos(pos);
+            if (list.contains(posTag)) {
+                message(player, "lt.setpos.msg");
+                return ActionResultType.FAIL;
+            }
+            list.add(posTag);
             toolTag.put(LINKED_BLOCKS, list);
             tagFromFunction.test(levelIn, pos, toolTag);
             itemTag.put(MULTILINKINGTOOL_TAG, toolTag);
@@ -143,17 +145,4 @@ public class MultiLinkingTool extends Item {
         tooltip(tooltip, "lt.notlinked");
         tooltip(tooltip, "lt.notlinked.msg");
     }
-
-    public void tooltip(final List<ITextComponent> list, final String text, final Object... obj) {
-        list.add(getComponent(text, obj));
-    }
-
-    public void message(final PlayerEntity player, final String text, final Object... obj) {
-        player.sendMessage(getComponent(text, obj), player.getUUID());
-    }
-
-    public TextComponent getComponent(final String text, final Object... obj) {
-        return new TranslationTextComponent(text, obj);
-    }
-
 }
