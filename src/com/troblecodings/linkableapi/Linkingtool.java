@@ -26,7 +26,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class Linkingtool extends Item {
 
-    private static final String LINKINGTOOL_TAG = "linkingToolTag";
+    protected static final String LINKINGTOOL_TAG = "linkingToolTag";
 
     protected final BiPredicate<World, BlockPos> predicate;
     protected final Predicate<TileEntity> predicateSet;
@@ -85,8 +85,8 @@ public class Linkingtool extends Item {
                 return EnumActionResult.FAIL;
             } else {
                 if (controller.canBeLinked() && predicate.test(worldIn, pos)) {
-                    final boolean containsPos = toolTag.hasKey("X") && toolTag.hasKey("Y")
-                            && toolTag.hasKey("Z");
+                    final boolean containsPos =
+                            toolTag.hasKey("X") && toolTag.hasKey("Y") && toolTag.hasKey("Z");
                     if (containsPos) {
                         message(player, "lt.setpos.msg");
                         return EnumActionResult.FAIL;
@@ -105,8 +105,8 @@ public class Linkingtool extends Item {
             }
             return EnumActionResult.SUCCESS;
         } else if (predicate.test(worldIn, pos)) {
-            final boolean containsPos = toolTag.hasKey("X") && toolTag.hasKey("Y")
-                    && toolTag.hasKey("Z");
+            final boolean containsPos =
+                    toolTag.hasKey("X") && toolTag.hasKey("Y") && toolTag.hasKey("Z");
             if (containsPos) {
                 message(player, "lt.setpos.msg");
                 return EnumActionResult.FAIL;
@@ -147,7 +147,7 @@ public class Linkingtool extends Item {
         tooltip.add(I18n.format("lt.notlinked.msg"));
     }
 
-    private static NBTTagCompound getOrCreateForStack(final ItemStack stack) {
+    public static NBTTagCompound getOrCreateForStack(final ItemStack stack) {
         NBTTagCompound tag = stack.getTagCompound();
         if (tag == null) {
             tag = new NBTTagCompound();

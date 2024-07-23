@@ -82,8 +82,9 @@ public class MultiLinkingTool extends Linkingtool {
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
                     NBTTagList list = (NBTTagList) toolTag.getTag(LINKED_BLOCKS);
-                    if (list == null)
+                    if (list == null) {
                         list = new NBTTagList();
+                    }
                     final List<NBTBase> tagList = new ArrayList<>();
                     list.forEach(tagList::add);
                     final NBTTagCompound tag = NBTUtil.createPosTag(pos);
@@ -107,8 +108,9 @@ public class MultiLinkingTool extends Linkingtool {
             return EnumActionResult.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
             NBTTagList list = (NBTTagList) toolTag.getTag(LINKED_BLOCKS);
-            if (list == null)
+            if (list == null) {
                 list = new NBTTagList();
+            }
             final List<NBTBase> tagList = new ArrayList<>();
             list.forEach(tagList::add);
             final NBTTagCompound tag = NBTUtil.createPosTag(pos);
@@ -152,14 +154,5 @@ public class MultiLinkingTool extends Linkingtool {
         }
         tooltip.add(I18n.format("lt.notlinked"));
         tooltip.add(I18n.format("lt.notlinked.msg"));
-    }
-
-    private static NBTTagCompound getOrCreateForStack(final ItemStack stack) {
-        NBTTagCompound tag = stack.getTagCompound();
-        if (tag == null) {
-            tag = new NBTTagCompound();
-            stack.setTagCompound(tag);
-        }
-        return tag;
     }
 }
