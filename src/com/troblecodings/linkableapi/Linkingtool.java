@@ -25,11 +25,11 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class Linkingtool extends Item {
 
-    private static final String LINKINGTOOL_TAG = "linkingToolTag";
+    protected static final String LINKINGTOOL_TAG = "linkingToolTag";
 
-    private final BiPredicate<Level, BlockPos> predicate;
-    private final Predicate<BlockEntity> predicateSet;
-    private final TaggableFunction tagFromFunction;
+    protected final BiPredicate<Level, BlockPos> predicate;
+    protected final Predicate<BlockEntity> predicateSet;
+    protected final TaggableFunction tagFromFunction;
 
     public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate) {
         this(tab, predicate, _u -> true);
@@ -51,13 +51,13 @@ public class Linkingtool extends Item {
 
     @Override
     public InteractionResult onItemUseFirst(final ItemStack stack, final UseOnContext ctx) {
-        final Level levelIn = ctx.getLevel();
         final Player player = ctx.getPlayer();
         if (player == null)
             return InteractionResult.FAIL;
-        final BlockPos pos = ctx.getClickedPos();
+        final Level levelIn = ctx.getLevel();
         if (levelIn.isClientSide)
             return InteractionResult.PASS;
+        final BlockPos pos = ctx.getClickedPos();
         final BlockEntity entity = levelIn.getBlockEntity(pos);
         final CompoundTag itemTag = stack.getOrCreateTag();
         final CompoundTag toolTag = itemTag.getCompound(LINKINGTOOL_TAG);
@@ -73,6 +73,8 @@ public class Linkingtool extends Item {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                     removeToolTag(stack);
                     message(player, "lt.reset");
+                    stack.hurtAndBreak(1, player,
+                            (user) -> user.broadcastBreakEvent(ctx.getHand()));
                     return InteractionResult.FAIL;
                 }
                 message(player, "lt.notlinked");
@@ -80,13 +82,12 @@ public class Linkingtool extends Item {
                 return InteractionResult.FAIL;
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
-                    final boolean containsPos = toolTag.contains("X") && toolTag.contains("Y")
-                            && toolTag.contains("Z");
+                    final boolean containsPos =
+                            toolTag.contains("X") && toolTag.contains("Y") && toolTag.contains("Z");
                     if (containsPos) {
                         message(player, "lt.setpos.msg");
                         return InteractionResult.FAIL;
                     }
-
                     final CompoundTag newToolTag = NbtUtils.writeBlockPos(pos);
                     tagFromFunction.test(levelIn, pos, newToolTag);
                     itemTag.put(LINKINGTOOL_TAG, newToolTag);
@@ -101,8 +102,8 @@ public class Linkingtool extends Item {
             }
             return InteractionResult.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
-            final boolean containsPos = toolTag.contains("X") && toolTag.contains("Y")
-                    && toolTag.contains("Z");
+            final boolean containsPos =
+                    toolTag.contains("X") && toolTag.contains("Y") && toolTag.contains("Z");
             if (containsPos) {
                 message(player, "lt.setpos.msg");
                 return InteractionResult.FAIL;
@@ -121,7 +122,7 @@ public class Linkingtool extends Item {
         return InteractionResult.FAIL;
     }
 
-    private void removeToolTag(final ItemStack stack) {
+    public void removeToolTag(final ItemStack stack) {
         stack.getOrCreateTag().remove(LINKINGTOOL_TAG);
     }
 
@@ -131,8 +132,8 @@ public class Linkingtool extends Item {
         final CompoundTag tag = stack.getOrCreateTag();
         if (tag.contains(LINKINGTOOL_TAG)) {
             final CompoundTag comp = tag.getCompound(LINKINGTOOL_TAG);
-            final boolean containsPos = comp.contains("X") && comp.contains("Y")
-                    && comp.contains("Z");
+            final boolean containsPos =
+                    comp.contains("X") && comp.contains("Y") && comp.contains("Z");
             if (containsPos) {
                 final BlockPos pos = NbtUtils.readBlockPos(comp);
                 tooltip(tooltip, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
