@@ -25,7 +25,7 @@ import net.minecraft.world.World;
 
 public class Linkingtool extends Item {
 
-    private static final String LINKINGTOOL_TAG = "linkingToolTag";
+    protected static final String LINKINGTOOL_TAG = "linkingToolTag";
 
     protected final BiPredicate<World, BlockPos> predicate;
     protected final Predicate<TileEntity> predicateSet;
@@ -82,8 +82,8 @@ public class Linkingtool extends Item {
                 return ActionResultType.FAIL;
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
-                    final boolean containsPos = toolTag.contains("X") && toolTag.contains("Y")
-                            && toolTag.contains("Z");
+                    final boolean containsPos =
+                            toolTag.contains("X") && toolTag.contains("Y") && toolTag.contains("Z");
                     if (containsPos) {
                         message(player, "lt.setpos.msg");
                         return ActionResultType.FAIL;
@@ -102,8 +102,8 @@ public class Linkingtool extends Item {
             }
             return ActionResultType.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
-            final boolean containsPos = toolTag.contains("X") && toolTag.contains("Y")
-                    && toolTag.contains("Z");
+            final boolean containsPos =
+                    toolTag.contains("X") && toolTag.contains("Y") && toolTag.contains("Z");
             if (containsPos) {
                 message(player, "lt.setpos.msg");
                 return ActionResultType.FAIL;
@@ -122,7 +122,7 @@ public class Linkingtool extends Item {
         return ActionResultType.FAIL;
     }
 
-    private void removeToolTag(final ItemStack stack) {
+    public void removeToolTag(final ItemStack stack) {
         stack.getOrCreateTag().remove(LINKINGTOOL_TAG);
     }
 
@@ -132,8 +132,8 @@ public class Linkingtool extends Item {
         final CompoundNBT tag = stack.getOrCreateTag();
         if (tag.contains(LINKINGTOOL_TAG)) {
             final CompoundNBT comp = tag.getCompound(LINKINGTOOL_TAG);
-            final boolean containsPos = comp.contains("X") && comp.contains("Y")
-                    && comp.contains("Z");
+            final boolean containsPos =
+                    comp.contains("X") && comp.contains("Y") && comp.contains("Z");
             if (containsPos) {
                 final BlockPos pos = NBTUtil.readBlockPos(comp);
                 tooltip(tooltip, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());

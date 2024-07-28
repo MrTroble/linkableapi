@@ -68,8 +68,9 @@ public class MultiLinkingTool extends Linkingtool {
                 }
                 list.stream().map(tag -> NBTUtil.readBlockPos((CompoundNBT) tag))
                         .forEach(linkPos -> {
-                            if (controller.link(linkPos, toolTag))
+                            if (controller.link(linkPos, toolTag)) {
                                 message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
+                            }
                         });
                 removeToolTag(stack);
                 message(player, "lt.reset");
@@ -79,8 +80,9 @@ public class MultiLinkingTool extends Linkingtool {
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
                     ListNBT list = (ListNBT) toolTag.get(LINKED_BLOCKS);
-                    if (list == null)
+                    if (list == null) {
                         list = new ListNBT();
+                    }
                     final CompoundNBT posTag = NBTUtil.writeBlockPos(pos);
                     if (list.contains(posTag)) {
                         message(player, "lt.setpos.msg");
@@ -102,8 +104,9 @@ public class MultiLinkingTool extends Linkingtool {
             return ActionResultType.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
             ListNBT list = (ListNBT) toolTag.get(LINKED_BLOCKS);
-            if (list == null)
+            if (list == null) {
                 list = new ListNBT();
+            }
             final CompoundNBT posTag = NBTUtil.writeBlockPos(pos);
             if (list.contains(posTag)) {
                 message(player, "lt.setpos.msg");
@@ -124,7 +127,8 @@ public class MultiLinkingTool extends Linkingtool {
         return ActionResultType.FAIL;
     }
 
-    private void removeToolTag(final ItemStack stack) {
+    @Override
+    public void removeToolTag(final ItemStack stack) {
         stack.getOrCreateTag().remove(MULTILINKINGTOOL_TAG);
     }
 
