@@ -3,8 +3,6 @@ package com.troblecodings.linkableapi;
 import java.util.List;
 import java.util.function.BiPredicate;
 
-import javax.annotation.Nullable;
-
 import com.google.common.base.Predicate;
 
 import net.minecraft.client.util.ITooltipFlag;
@@ -21,6 +19,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class Linkingtool extends Item {
 
@@ -42,7 +42,7 @@ public class Linkingtool extends Item {
 
     public Linkingtool(final ItemGroup tab, final BiPredicate<World, BlockPos> predicate,
             final Predicate<TileEntity> predicateSet, final TaggableFunction function) {
-        super(new Properties().group(tab).setNoRepair().defaultMaxDamage(64).maxStackSize(1));
+        super(new Properties().group(tab).setNoRepair().defaultMaxDamage(64));
         this.predicate = predicate;
         this.predicateSet = predicateSet;
         this.tagFromFunction = function;
@@ -50,25 +50,24 @@ public class Linkingtool extends Item {
 
     @Override
     public EnumActionResult onItemUseFirst(final ItemStack stack, final ItemUseContext ctx) {
-        final World levelIn = ctx.getWorld();
         final EntityPlayer player = ctx.getPlayer();
-        final BlockPos pos = ctx.getPos();
         if (player == null)
             return EnumActionResult.FAIL;
+        final World levelIn = ctx.getWorld();
         if (levelIn.isRemote)
             return EnumActionResult.PASS;
+        final BlockPos pos = ctx.getPos();
         final TileEntity entity = levelIn.getTileEntity(pos);
         final NBTTagCompound itemTag = getOrCreateForStack(stack);
         final NBTTagCompound toolTag = itemTag.getCompound(LINKINGTOOL_TAG);
         if (entity instanceof ILinkableTile && this.predicateSet.apply(entity)) {
             final ILinkableTile controller = (ILinkableTile) entity;
             if (!player.isSneaking()) {
-                final NBTTagCompound comp = stack.getTag();
                 if (toolTag == null) {
                     message(player, "lt.notset", pos.toString());
                     return EnumActionResult.PASS;
                 }
-                final BlockPos lpos = NBTUtil.readBlockPos(comp);
+                final BlockPos lpos = NBTUtil.readBlockPos(toolTag);
                 if (controller.link(lpos, toolTag)) {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                     removeToolTag(stack);
@@ -113,7 +112,7 @@ public class Linkingtool extends Item {
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return EnumActionResult.SUCCESS;
-        } else if (player.isSneaking() && stack.getTag() != null) {
+        } else if (player.isSneaking()) {
             removeToolTag(stack);
             message(player, "lt.reset");
             return EnumActionResult.SUCCESS;
@@ -125,13 +124,16 @@ public class Linkingtool extends Item {
         getOrCreateForStack(stack).removeTag(LINKINGTOOL_TAG);
     }
 
+    @OnlyIn(Dist.CLIENT)
     @Override
-    public void addInformation(final ItemStack stack, @Nullable final World levelIn,
+    public void addInformation(final ItemStack stack, final World levelIn,
             final List<ITextComponent> tooltip, final ITooltipFlag flagIn) {
-        final NBTTagCompound nbt = stack.getTag();
-        if (nbt != null) {
-            final BlockPos pos = NBTUtil.readBlockPos(nbt);
-            if (pos != null) {
+        final NBTTagCompound nbt = getOrCreateForStack(stack);
+        if (nbt.hasKey(LINKINGTOOL_TAG)) {
+            final NBTTagCompound comp = nbt.getCompound(LINKINGTOOL_TAG);
+            final boolean containsPos = comp.hasKey("X") && comp.hasKey("Y") && comp.hasKey("Z");
+            if (containsPos) {
+                final BlockPos pos = NBTUtil.readBlockPos(nbt);
                 tooltip(tooltip, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                 return;
             }

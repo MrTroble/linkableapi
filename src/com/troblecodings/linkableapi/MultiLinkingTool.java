@@ -1,5 +1,6 @@
 package com.troblecodings.linkableapi;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
@@ -13,6 +14,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUseContext;
+import net.minecraft.nbt.INBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTUtil;
@@ -21,6 +23,8 @@ import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.World;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class MultiLinkingTool extends Linkingtool {
 
@@ -48,9 +52,9 @@ public class MultiLinkingTool extends Linkingtool {
         final EntityPlayer player = ctx.getPlayer();
         if (player == null)
             return EnumActionResult.FAIL;
-        final BlockPos pos = ctx.getPos();
         if (levelIn.isRemote)
             return EnumActionResult.PASS;
+        final BlockPos pos = ctx.getPos();
         final TileEntity entity = levelIn.getTileEntity(pos);
         final NBTTagCompound itemTag = getOrCreateForStack(stack);
         final NBTTagCompound toolTag = itemTag.getCompound(MULTILINKINGTOOL_TAG);
@@ -82,8 +86,10 @@ public class MultiLinkingTool extends Linkingtool {
                     if (list == null) {
                         list = new NBTTagList();
                     }
+                    final List<INBTBase> tagList = new ArrayList<>();
+                    list.forEach(tagList::add);
                     final NBTTagCompound tag = NBTUtil.writeBlockPos(pos);
-                    if (list.contains(tag)) {
+                    if (tagList.contains(tag)) {
                         message(player, "lt.setpos.msg");
                         return EnumActionResult.FAIL;
                     }
@@ -106,8 +112,10 @@ public class MultiLinkingTool extends Linkingtool {
             if (list == null) {
                 list = new NBTTagList();
             }
+            final List<INBTBase> tagList = new ArrayList<>();
+            list.forEach(tagList::add);
             final NBTTagCompound tag = NBTUtil.writeBlockPos(pos);
-            if (list.contains(tag)) {
+            if (tagList.contains(tag)) {
                 message(player, "lt.setpos.msg");
                 return EnumActionResult.FAIL;
             }
@@ -127,9 +135,15 @@ public class MultiLinkingTool extends Linkingtool {
     }
 
     @Override
+    public void removeToolTag(final ItemStack stack) {
+        getOrCreateForStack(stack).removeTag(MULTILINKINGTOOL_TAG);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    @Override
     public void addInformation(final ItemStack stack, @Nullable final World levelIn,
             final List<ITextComponent> tooltip, final ITooltipFlag flagIn) {
-        final NBTTagCompound itemTag = stack.getTag();
+        final NBTTagCompound itemTag = getOrCreateForStack(stack);
         final NBTTagCompound toolTag = itemTag.getCompound(MULTILINKINGTOOL_TAG);
         if (toolTag != null) {
             final NBTTagList list = (NBTTagList) toolTag.getTag(LINKED_BLOCKS);
