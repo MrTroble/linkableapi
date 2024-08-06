@@ -25,9 +25,12 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 public class Linkingtool extends Item implements Message {
 
-    private final BiPredicate<Level, BlockPos> predicate;
-    private final Predicate<BlockEntity> predicateSet;
-    private final CreativeModeTab tab;
+    protected static final String LINKINGTOOL_TAG = "linkingToolTag";
+
+    protected final BiPredicate<Level, BlockPos> predicate;
+    protected final Predicate<BlockEntity> predicateSet;
+    protected final CreativeModeTab tab;
+    protected final TaggableFunction tagFromFunction;
 
     public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate) {
         this(tab, predicate, _u -> true);
@@ -35,77 +38,116 @@ public class Linkingtool extends Item implements Message {
 
     public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet) {
-        super(new Properties());
+        this(tab, predicate, predicateSet, (_u1, _u2, _u3) -> {
+        });
+    }
+
+    public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
+            final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
+        super(new Properties().durability(64).setNoRepair());
         this.predicate = predicate;
         this.predicateSet = predicateSet;
         this.tab = tab;
         if (tab != null) {
             FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onTab);
         }
+        this.tagFromFunction = function;
     }
 
     private void onTab(final BuildCreativeModeTabContentsEvent ev) {
-        if (ev.getTab().equals(tab))
+        if (ev.getTab().equals(tab)) {
             ev.accept(() -> this);
+        }
     }
 
     @Override
     public InteractionResult onItemUseFirst(final ItemStack stack, final UseOnContext ctx) {
-        final Level levelIn = ctx.getLevel();
         final Player player = ctx.getPlayer();
-        final BlockPos pos = ctx.getClickedPos();
+        if (player == null)
+            return InteractionResult.FAIL;
+        final Level levelIn = ctx.getLevel();
         if (levelIn.isClientSide)
             return InteractionResult.PASS;
+        final BlockPos pos = ctx.getClickedPos();
         final BlockEntity entity = levelIn.getBlockEntity(pos);
+        final CompoundTag itemTag = stack.getOrCreateTag();
+        final CompoundTag toolTag = itemTag.getCompound(LINKINGTOOL_TAG);
         if (entity instanceof ILinkableTile && this.predicateSet.apply(entity)) {
             final ILinkableTile controller = (ILinkableTile) entity;
             if (!player.isShiftKeyDown()) {
-                final CompoundTag comp = stack.getTag();
-                if (comp == null) {
+                if (toolTag == null) {
                     message(player, "lt.notset", pos.toString());
                     return InteractionResult.PASS;
                 }
-                final BlockPos lpos = NbtUtils.readBlockPos(comp);
-                if (controller.link(lpos)) {
+                final BlockPos lpos = NbtUtils.readBlockPos(toolTag);
+                if (controller.link(lpos, toolTag)) {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
-                    stack.setTag(null);
+                    removeToolTag(stack);
                     message(player, "lt.reset");
+                    stack.hurtAndBreak(1, player,
+                            (user) -> user.broadcastBreakEvent(ctx.getHand()));
                     return InteractionResult.FAIL;
                 }
                 message(player, "lt.notlinked");
                 message(player, "lt.notlinked.msg");
                 return InteractionResult.FAIL;
             } else {
+                if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
+                    final boolean containsPos =
+                            toolTag.contains("X") && toolTag.contains("Y") && toolTag.contains("Z");
+                    if (containsPos) {
+                        message(player, "lt.setpos.msg");
+                        return InteractionResult.FAIL;
+                    }
+
+                    final CompoundTag newToolTag = NbtUtils.writeBlockPos(pos);
+                    tagFromFunction.test(levelIn, pos, newToolTag);
+                    itemTag.put(LINKINGTOOL_TAG, newToolTag);
+                    message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+                    message(player, "lt.setpos.msg");
+                    return InteractionResult.SUCCESS;
+                }
                 if (controller.hasLink() && controller.unlink()) {
                     message(player, "lt.unlink");
+                    return InteractionResult.SUCCESS;
                 }
             }
             return InteractionResult.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
-            if (stack.getTag() != null) {
+            final boolean containsPos =
+                    toolTag.contains("X") && toolTag.contains("Y") && toolTag.contains("Z");
+            if (containsPos) {
                 message(player, "lt.setpos.msg");
                 return InteractionResult.FAIL;
             }
-            final CompoundTag comp = NbtUtils.writeBlockPos(pos);
-            stack.setTag(comp);
+            final CompoundTag newToolTag = NbtUtils.writeBlockPos(pos);
+            tagFromFunction.test(levelIn, pos, newToolTag);
+            itemTag.put(LINKINGTOOL_TAG, newToolTag);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return InteractionResult.SUCCESS;
-        } else if (player.isShiftKeyDown() && stack.getTag() != null) {
-            stack.setTag(null);
+        } else if (player.isShiftKeyDown()) {
+            removeToolTag(stack);
             message(player, "lt.reset");
             return InteractionResult.SUCCESS;
         }
         return InteractionResult.FAIL;
     }
 
+    public void removeToolTag(final ItemStack stack) {
+        stack.getOrCreateTag().remove(LINKINGTOOL_TAG);
+    }
+
     @Override
     public void appendHoverText(final ItemStack stack, @Nullable final Level levelIn,
             final List<Component> tooltip, final TooltipFlag flagIn) {
-        final CompoundTag nbt = stack.getTag();
-        if (nbt != null) {
-            final BlockPos pos = NbtUtils.readBlockPos(nbt);
-            if (pos != null) {
+        final CompoundTag tag = stack.getOrCreateTag();
+        if (tag.contains(LINKINGTOOL_TAG)) {
+            final CompoundTag comp = tag.getCompound(LINKINGTOOL_TAG);
+            final boolean containsPos =
+                    comp.contains("X") && comp.contains("Y") && comp.contains("Z");
+            if (containsPos) {
+                final BlockPos pos = NbtUtils.readBlockPos(comp);
                 tooltip(tooltip, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                 return;
             }
@@ -114,10 +156,7 @@ public class Linkingtool extends Item implements Message {
         tooltip(tooltip, "lt.notlinked.msg");
     }
 
-    @SuppressWarnings({
-            "rawtypes", "unchecked"
-    })
-    public void tooltip(final List list, final String text, final Object... obj) {
+    public void tooltip(final List<Component> list, final String text, final Object... obj) {
         list.add(getComponent(text, obj));
     }
 
