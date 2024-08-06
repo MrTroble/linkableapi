@@ -41,7 +41,7 @@ public class Linkingtool extends Item implements Message {
 
     public Linkingtool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
-        super(new FabricItemSettings().maxDamage(10));
+        super(new FabricItemSettings().maxDamage(64));
         this.predicate = predicate;
         this.predicateSet = predicateSet;
         this.tab = tab;
