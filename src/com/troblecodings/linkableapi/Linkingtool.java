@@ -147,5 +147,4 @@ public class Linkingtool extends Item implements Message {
     public void tooltip(final List<Text> list, final String text, final Object... obj) {
         list.add(getComponent(text, obj));
     }
-
 }

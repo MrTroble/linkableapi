@@ -118,7 +118,6 @@ public class MultiLinkingTool extends Linkingtool {
             return ActionResult.SUCCESS;
         } else if (player.isSneaking() && stack.getNbt() != null) {
             removeToolTag(stack);
-            stack.setNbt(null);
             message(player, "lt.reset");
             return ActionResult.SUCCESS;
         }
