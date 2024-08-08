@@ -44,13 +44,13 @@ public class MultiLinkingTool extends Linkingtool {
 
     @Override
     public InteractionResult onItemUseFirst(final ItemStack stack, final UseOnContext ctx) {
-        final Level levelIn = ctx.getLevel();
         final Player player = ctx.getPlayer();
         if (player == null)
             return InteractionResult.FAIL;
-        final BlockPos pos = ctx.getClickedPos();
+        final Level levelIn = ctx.getLevel();
         if (levelIn.isClientSide)
             return InteractionResult.PASS;
+        final BlockPos pos = ctx.getClickedPos();
         final BlockEntity entity = levelIn.getBlockEntity(pos);
         final CompoundTag itemTag = stack.getOrCreateTag();
         final CompoundTag toolTag = itemTag.getCompound(MULTILINKINGTOOL_TAG);
@@ -68,8 +68,9 @@ public class MultiLinkingTool extends Linkingtool {
                 }
                 list.stream().map(tag -> NbtUtils.readBlockPos((CompoundTag) tag))
                         .forEach(linkPos -> {
-                            if (controller.link(linkPos, toolTag))
+                            if (controller.link(linkPos, toolTag)) {
                                 message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
+                            }
                         });
                 removeToolTag(stack);
                 message(player, "lt.reset");
@@ -79,8 +80,9 @@ public class MultiLinkingTool extends Linkingtool {
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
                     ListTag list = (ListTag) toolTag.get(LINKED_BLOCKS);
-                    if (list == null)
+                    if (list == null) {
                         list = new ListTag();
+                    }
                     final CompoundTag posTag = NbtUtils.writeBlockPos(pos);
                     if (list.contains(posTag)) {
                         message(player, "lt.setpos.msg");
@@ -102,8 +104,9 @@ public class MultiLinkingTool extends Linkingtool {
             return InteractionResult.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
             ListTag list = (ListTag) toolTag.get(LINKED_BLOCKS);
-            if (list == null)
+            if (list == null) {
                 list = new ListTag();
+            }
             final CompoundTag posTag = NbtUtils.writeBlockPos(pos);
             if (list.contains(posTag)) {
                 message(player, "lt.setpos.msg");
@@ -124,7 +127,8 @@ public class MultiLinkingTool extends Linkingtool {
         return InteractionResult.FAIL;
     }
 
-    private void removeToolTag(final ItemStack stack) {
+    @Override
+    public void removeToolTag(final ItemStack stack) {
         stack.getOrCreateTag().remove(MULTILINKINGTOOL_TAG);
     }
 
