@@ -1,6 +1,7 @@
 package com.troblecodings.linkableapi;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
@@ -9,6 +10,7 @@ import com.troblecodings.tcredstone.GIRCRedstoneMain;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
@@ -65,7 +67,8 @@ public class MultiLinkingTool extends Linkingtool implements Message {
                     message(player, "lt.notlinked");
                     return InteractionResult.FAIL;
                 }
-                list.stream().map(tag -> NbtUtils.readBlockPos((CompoundTag) tag, LINKED_BLOCKS))
+
+                list.stream().map(tag -> readBlockPos((IntArrayTag) tag, LINKED_BLOCKS))
                         .forEach(linkPos -> {
                             if (controller.link(linkPos, itemTag)) {
                                 message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
@@ -89,6 +92,7 @@ public class MultiLinkingTool extends Linkingtool implements Message {
                     tagList.add(NbtUtils.writeBlockPos(pos));
                     tagFromFunction.test(levelIn, pos, tagList);
                     itemTag.put(LINKED_BLOCKS, tagList);
+                    stack.set(GIRCRedstoneMain.COMPOUND_DATA, itemTag);
                     message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
                     message(player, "lt.setpos.msg");
                     return InteractionResult.SUCCESS;
@@ -100,7 +104,7 @@ public class MultiLinkingTool extends Linkingtool implements Message {
             }
             return InteractionResult.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
-            ListTag tagList = itemTag.getList(LINKED_BLOCKS, 1);
+            ListTag tagList = (ListTag) itemTag.get(LINKED_BLOCKS);
             if (tagList == null) {
                 tagList = new ListTag();
             }
@@ -112,6 +116,7 @@ public class MultiLinkingTool extends Linkingtool implements Message {
             tagList.add(posTag);
             tagFromFunction.test(levelIn, pos, tagList);
             itemTag.put(LINKED_BLOCKS, tagList);
+            stack.set(GIRCRedstoneMain.COMPOUND_DATA, itemTag);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return InteractionResult.SUCCESS;
@@ -128,20 +133,22 @@ public class MultiLinkingTool extends Linkingtool implements Message {
         stack.remove(GIRCRedstoneMain.COMPOUND_DATA);
     }
 
+    public static Optional<BlockPos> readBlockPos(final IntArrayTag tag, final String string) {
+        int[] aint = tag.getAsIntArray();
+        return aint.length == 3 ? Optional.of(new BlockPos(aint[0], aint[1], aint[2]))
+                : Optional.empty();
+    }
+
     @Override
     public void appendHoverText(final ItemStack stack, final TooltipContext ctx,
             final List<Component> tooltip, final TooltipFlag flagIn) {
         final CompoundTag itemTag = getOrCreateForStack(stack);
         if (itemTag.contains(LINKED_BLOCKS)) {
-            final ListTag toolTag = itemTag.getList(LINKED_BLOCKS, 13);
+            final ListTag toolTag = (ListTag) itemTag.get(LINKED_BLOCKS);
             if (toolTag != null) {
-                // final CompoundTag list = toolTag.get(LINKED_BLOCKS);
-                if (toolTag != null) {
-                    tooltip(tooltip, "lt.linkedpos",
-                            toolTag.stream().map(
-                                    tag -> NbtUtils.readBlockPos((CompoundTag) tag, LINKED_BLOCKS))
-                                    .collect(Collectors.toList()));
-                }
+                tooltip(tooltip, "lt.linkedpos",
+                        toolTag.stream().map(tag -> readBlockPos((IntArrayTag) tag, LINKED_BLOCKS))
+                                .collect(Collectors.toList()));
             }
             return;
         }
