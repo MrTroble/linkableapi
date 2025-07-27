@@ -1,8 +1,8 @@
 package com.troblecodings.linkableapi;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 
 import com.google.common.base.Predicate;
 import com.troblecodings.tcredstone.GIRCRedstoneMain;
@@ -18,6 +18,7 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -146,7 +147,8 @@ public class Linkingtool extends Item implements Message {
 
     @Override
     public void appendHoverText(final ItemStack stack, final TooltipContext ctx,
-            final List<Component> tooltip, final TooltipFlag flagIn) {
+            final TooltipDisplay display, final Consumer<Component> tooltip,
+            final TooltipFlag flagIn) {
         final CompoundTag tag = getOrCreateForStack(stack);
         if (tag.contains(LINKINGTOOL_TAG)) {
             final Optional<BlockPos> pos = NbtUtils.readBlockPos(tag, LINKINGTOOL_TAG);
@@ -159,8 +161,8 @@ public class Linkingtool extends Item implements Message {
         tooltip(tooltip, "lt.notlinked.msg");
     }
 
-    public void tooltip(final List<Component> list, final String text, final Object... obj) {
-        list.add(getComponent(text, obj));
+    public void tooltip(final Consumer<Component> list, final String text, final Object... obj) {
+        list.accept(getComponent(text, obj));
     }
 
 }

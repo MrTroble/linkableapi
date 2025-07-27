@@ -1,8 +1,8 @@
 package com.troblecodings.linkableapi;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.google.common.base.Predicate;
@@ -20,6 +20,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -141,7 +142,8 @@ public class MultiLinkingTool extends Linkingtool implements Message {
 
     @Override
     public void appendHoverText(final ItemStack stack, final TooltipContext ctx,
-            final List<Component> tooltip, final TooltipFlag flagIn) {
+            final TooltipDisplay display, final Consumer<Component> tooltip,
+            final TooltipFlag flagIn) {
         final CompoundTag itemTag = getOrCreateForStack(stack);
         if (itemTag.contains(LINKED_BLOCKS)) {
             final ListTag toolTag = (ListTag) itemTag.get(LINKED_BLOCKS);
