@@ -1,19 +1,22 @@
 package com.troblecodings.linkableapi;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiPredicate;
 
 import com.google.common.base.Predicate;
+import com.troblecodings.tcredstone.TCRedstoneMain;
 
-import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.item.TooltipContext;
+import net.minecraft.client.item.TooltipType;
+import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroups;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtHelper;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -41,7 +44,7 @@ public class Linkingtool extends Item implements Message {
 
     public Linkingtool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
-        super(new FabricItemSettings().maxDamage(64));
+        super(new Settings().maxDamage(64));
         this.predicate = predicate;
         this.predicateSet = predicateSet;
         this.tab = tab;
@@ -57,40 +60,37 @@ public class Linkingtool extends Item implements Message {
         if (levelIn.isClient())
             return ActionResult.PASS;
         final BlockPos pos = ctx.getBlockPos();
-        final ItemStack stack = ctx.getStack();
         final BlockEntity entity = levelIn.getBlockEntity(pos);
-        final NbtCompound itemTag = stack.getOrCreateNbt();
-        final NbtCompound toolTag = itemTag.getCompound(LINKINGTOOL_TAG);
+        final ItemStack stack = ctx.getStack();
+        final NbtCompound itemTag = getOrCreateNbt(stack);
         if (entity instanceof ILinkableTile && this.predicateSet.apply(entity)) {
             final ILinkableTile controller = (ILinkableTile) entity;
             if (!player.isSneaking()) {
-                if (toolTag == null) {
+                if (!itemTag.contains(LINKINGTOOL_TAG)) {
                     message(player, "lt.notset", pos.toString());
                     return ActionResult.PASS;
                 }
-                final BlockPos lpos = NbtHelper.toBlockPos(toolTag);
-                if (controller.link(lpos, toolTag)) {
+                final Optional<BlockPos> lpos = NbtHelper.toBlockPos(itemTag, LINKINGTOOL_TAG);
+                if (controller.link(lpos, itemTag)) {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                     removeToolTag(stack);
                     message(player, "lt.reset");
-                    stack.damage(1, player, (user) -> user.sendToolBreakStatus(ctx.getHand()));
-                    return ActionResult.FAIL;
+                    stack.damage(1, player, EquipmentSlot.MAINHAND);
+                    return ActionResult.SUCCESS;
                 }
                 message(player, "lt.notlinked");
                 message(player, "lt.notlinked.msg");
                 return ActionResult.FAIL;
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
-                    final boolean containsPos =
-                            toolTag.contains("X") && toolTag.contains("Y") && toolTag.contains("Z");
-                    if (containsPos) {
+                    if (itemTag.contains(LINKINGTOOL_TAG)) {
                         message(player, "lt.setpos.msg");
                         return ActionResult.FAIL;
                     }
-
-                    final NbtCompound newToolTag = NbtHelper.fromBlockPos(pos);
+                    final NbtElement newToolTag = NbtHelper.fromBlockPos(pos);
                     tagFromFunction.test(levelIn, pos, newToolTag);
                     itemTag.put(LINKINGTOOL_TAG, newToolTag);
+                    stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
                     message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
                     message(player, "lt.setpos.msg");
                     return ActionResult.SUCCESS;
@@ -102,15 +102,14 @@ public class Linkingtool extends Item implements Message {
             }
             return ActionResult.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
-            final boolean containsPos =
-                    toolTag.contains("X") && toolTag.contains("Y") && toolTag.contains("Z");
-            if (containsPos) {
+            if (itemTag.contains(LINKINGTOOL_TAG)) {
                 message(player, "lt.setpos.msg");
                 return ActionResult.FAIL;
             }
-            final NbtCompound newToolTag = NbtHelper.fromBlockPos(pos);
+            final NbtElement newToolTag = NbtHelper.fromBlockPos(pos);
             tagFromFunction.test(levelIn, pos, newToolTag);
             itemTag.put(LINKINGTOOL_TAG, newToolTag);
+            stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return ActionResult.SUCCESS;
@@ -123,22 +122,28 @@ public class Linkingtool extends Item implements Message {
     }
 
     public void removeToolTag(final ItemStack stack) {
-        stack.getOrCreateNbt().remove(LINKINGTOOL_TAG);
+        stack.remove(TCRedstoneMain.COMPOUND_DATA);
+    }
+
+    protected static NbtCompound getOrCreateNbt(final ItemStack stack) {
+        NbtCompound nbt = stack.get(TCRedstoneMain.COMPOUND_DATA);
+        if (nbt == null) {
+            nbt = new NbtCompound();
+            stack.set(TCRedstoneMain.COMPOUND_DATA, nbt);
+        }
+        return nbt;
     }
 
     @Override
-    public void appendTooltip(final ItemStack stack, final World world, final List<Text> tooltip,
-            final TooltipContext context) {
-        final NbtCompound tag = stack.getOrCreateNbt();
+    public void appendTooltip(final ItemStack stack, final TooltipContext context,
+            final List<Text> tooltip, final TooltipType type) {
+        final NbtCompound tag = getOrCreateNbt(stack);
         if (tag.contains(LINKINGTOOL_TAG)) {
-            final NbtCompound comp = tag.getCompound(LINKINGTOOL_TAG);
-            final boolean containsPos =
-                    comp.contains("X") && comp.contains("Y") && comp.contains("Z");
-            if (containsPos) {
-                final BlockPos pos = NbtHelper.toBlockPos(comp);
-                tooltip(tooltip, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
+            final Optional<BlockPos> pos = NbtHelper.toBlockPos(tag, LINKINGTOOL_TAG);
+            if (pos.get() == null)
                 return;
-            }
+            tooltip(tooltip, "lt.linkedpos", pos.get().getX(), pos.get().getY(), pos.get().getZ());
+            return;
         }
         tooltip(tooltip, "lt.notlinked");
         tooltip(tooltip, "lt.notlinked.msg");
