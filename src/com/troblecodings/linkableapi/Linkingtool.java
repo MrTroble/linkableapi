@@ -1,13 +1,14 @@
 package com.troblecodings.linkableapi;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 
 import com.google.common.base.Predicate;
 import com.troblecodings.tcredstone.TCRedstoneMain;
 
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.component.type.TooltipDisplayComponent;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
@@ -136,7 +137,8 @@ public class Linkingtool extends Item implements Message {
 
     @Override
     public void appendTooltip(final ItemStack stack, final TooltipContext context,
-            final List<Text> tooltip, final TooltipType type) {
+            final TooltipDisplayComponent component, final Consumer<Text> tooltip,
+            final TooltipType type) {
         final NbtCompound tag = getOrCreateNbt(stack);
         if (tag.contains(LINKINGTOOL_TAG)) {
             final Optional<BlockPos> pos = NbtHelper.toBlockPos(tag, LINKINGTOOL_TAG);
@@ -149,7 +151,7 @@ public class Linkingtool extends Item implements Message {
         tooltip(tooltip, "lt.notlinked.msg");
     }
 
-    public void tooltip(final List<Text> list, final String text, final Object... obj) {
-        list.add(getComponent(text, obj));
+    public void tooltip(final Consumer<Text> list, final String text, final Object... obj) {
+        list.accept(getComponent(text, obj));
     }
 }
