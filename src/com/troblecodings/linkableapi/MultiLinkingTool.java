@@ -15,6 +15,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CreativeModeTab;
@@ -78,8 +79,9 @@ public class MultiLinkingTool extends Linkingtool {
                         });
                 removeToolTag(stack);
                 message(player, "lt.reset");
-                stack.hurtAndBreak(list.size(), (ServerLevel) levelIn, player, item -> {
-                });
+                stack.hurtAndBreak(list.size(), (ServerLevel) levelIn, (ServerPlayer) player,
+                        item -> {
+                        });
                 return InteractionResult.SUCCESS;
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
