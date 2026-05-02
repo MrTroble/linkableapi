@@ -32,19 +32,22 @@ public class Linkingtool extends Item implements Message {
     protected final ItemGroups tab;
     protected final TaggableFunction tagFromFunction;
 
-    public Linkingtool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate) {
-        this(tab, predicate, _u -> true);
+    public Linkingtool(final Settings settings, final ItemGroups tab,
+            final BiPredicate<World, BlockPos> predicate) {
+        this(settings, tab, predicate, _u -> true);
     }
 
-    public Linkingtool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate,
+    public Linkingtool(final Settings settings, final ItemGroups tab,
+            final BiPredicate<World, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet) {
-        this(tab, predicate, predicateSet, (_u1, _u2, _u3) -> {
+        this(settings, tab, predicate, predicateSet, (_u1, _u2, _u3) -> {
         });
     }
 
-    public Linkingtool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate,
+    public Linkingtool(final Settings settings, final ItemGroups tab,
+            final BiPredicate<World, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
-        super(new Settings().maxDamage(64));
+        super(settings.maxDamage(64));
         this.predicate = predicate;
         this.predicateSet = predicateSet;
         this.tab = tab;

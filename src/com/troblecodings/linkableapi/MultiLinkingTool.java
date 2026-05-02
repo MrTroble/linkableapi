@@ -29,18 +29,21 @@ public class MultiLinkingTool extends Linkingtool {
 
     private static final String LINKED_BLOCKS = "linkedBlocks";
 
-    public MultiLinkingTool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate) {
-        super(tab, predicate);
+    public MultiLinkingTool(final Settings settings, final ItemGroups tab,
+            final BiPredicate<World, BlockPos> predicate) {
+        super(settings, tab, predicate);
     }
 
-    public MultiLinkingTool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate,
+    public MultiLinkingTool(final Settings settings, final ItemGroups tab,
+            final BiPredicate<World, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
-        super(tab, predicate, predicateSet, function);
+        super(settings, tab, predicate, predicateSet, function);
     }
 
-    public MultiLinkingTool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate,
+    public MultiLinkingTool(final Settings settings, final ItemGroups tab,
+            final BiPredicate<World, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet) {
-        super(tab, predicate, predicateSet);
+        super(settings, tab, predicate, predicateSet);
     }
 
     @Override
