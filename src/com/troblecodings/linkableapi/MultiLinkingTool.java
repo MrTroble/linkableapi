@@ -52,7 +52,7 @@ public class MultiLinkingTool extends Linkingtool implements Message {
         if (player == null)
             return InteractionResult.FAIL;
         final Level levelIn = ctx.getLevel();
-        if (levelIn.isClientSide)
+        if (levelIn.isClientSide())
             return InteractionResult.PASS;
         final BlockPos pos = ctx.getClickedPos();
         final BlockEntity entity = levelIn.getBlockEntity(pos);
