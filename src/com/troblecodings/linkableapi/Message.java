@@ -7,7 +7,7 @@ import net.minecraft.world.entity.player.Player;
 public interface Message {
 
     default void message(final Player player, final String text, final Object... obj) {
-        player.sendSystemMessage(getComponent(text, obj));
+        player.displayClientMessage(getComponent(text, obj), true);
     }
 
     default MutableComponent getComponent(final String text, final Object... obj) {
