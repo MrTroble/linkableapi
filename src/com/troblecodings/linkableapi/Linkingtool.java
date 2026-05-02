@@ -21,8 +21,9 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 
 public class Linkingtool extends Item implements Message {
 
@@ -43,7 +44,6 @@ public class Linkingtool extends Item implements Message {
         });
     }
 
-    @SuppressWarnings("removal")
     public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
         super(new Properties().durability(64));
@@ -51,7 +51,10 @@ public class Linkingtool extends Item implements Message {
         this.predicateSet = predicateSet;
         this.tab = tab;
         if (tab != null) {
-            FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onTab);
+            final IEventBus bus = ModLoadingContext.get().getActiveContainer().getEventBus();
+            if (bus != null) {
+                bus.addListener(this::onTab);
+            }
         }
         this.tagFromFunction = function;
     }
