@@ -1,15 +1,15 @@
 package com.troblecodings.linkableapi;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 
 import com.google.common.base.Predicate;
 import com.troblecodings.tcredstone.GIRCRedstoneMain;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
@@ -18,6 +18,7 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -86,7 +87,7 @@ public class Linkingtool extends Item implements Message {
                     message(player, "lt.notset", pos.toString());
                     return InteractionResult.PASS;
                 }
-                final Optional<BlockPos> lpos = NbtUtils.readBlockPos(itemTag, LINKINGTOOL_TAG);
+                final Optional<BlockPos> lpos = readBlockPos(itemTag, LINKINGTOOL_TAG);
                 if (controller.link(lpos, itemTag)) {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                     removeToolTag(stack);
@@ -103,7 +104,7 @@ public class Linkingtool extends Item implements Message {
                         message(player, "lt.setpos.msg");
                         return InteractionResult.FAIL;
                     }
-                    final Tag newToolTag = NbtUtils.writeBlockPos(pos);
+                    final Tag newToolTag = writeBlockPos(pos);
                     tagFromFunction.test(levelIn, pos, newToolTag);
                     itemTag.put(LINKINGTOOL_TAG, newToolTag);
                     stack.set(GIRCRedstoneMain.COMPOUND_DATA, itemTag);
@@ -122,7 +123,7 @@ public class Linkingtool extends Item implements Message {
                 message(player, "lt.setpos.msg");
                 return InteractionResult.FAIL;
             }
-            final Tag newToolTag = NbtUtils.writeBlockPos(pos);
+            final Tag newToolTag = writeBlockPos(pos);
             tagFromFunction.test(levelIn, pos, newToolTag);
             itemTag.put(LINKINGTOOL_TAG, newToolTag);
             stack.set(GIRCRedstoneMain.COMPOUND_DATA, itemTag);
@@ -152,10 +153,11 @@ public class Linkingtool extends Item implements Message {
 
     @Override
     public void appendHoverText(final ItemStack stack, final TooltipContext ctx,
-            final List<Component> tooltip, final TooltipFlag flagIn) {
+            final TooltipDisplay display, final Consumer<Component> tooltip,
+            final TooltipFlag flagIn) {
         final CompoundTag tag = getOrCreateForStack(stack);
         if (tag.contains(LINKINGTOOL_TAG)) {
-            final Optional<BlockPos> pos = NbtUtils.readBlockPos(tag, LINKINGTOOL_TAG);
+            final Optional<BlockPos> pos = readBlockPos(tag, LINKINGTOOL_TAG);
             if (pos.get() == null)
                 return;
             tooltip(tooltip, "lt.linkedpos", pos.get().getX(), pos.get().getY(), pos.get().getZ());
@@ -165,8 +167,23 @@ public class Linkingtool extends Item implements Message {
         tooltip(tooltip, "lt.notlinked.msg");
     }
 
-    public void tooltip(final List<Component> list, final String text, final Object... obj) {
-        list.add(getComponent(text, obj));
+    public void tooltip(final Consumer<Component> sink, final String text, final Object... obj) {
+        sink.accept(getComponent(text, obj));
+    }
+
+    public static Tag writeBlockPos(final BlockPos pos) {
+        return new IntArrayTag(new int[] { pos.getX(), pos.getY(), pos.getZ() });
+    }
+
+    public static Optional<BlockPos> readBlockPos(final CompoundTag tag, final String key) {
+        final Tag posTag = tag.get(key);
+        if (posTag instanceof IntArrayTag intArray) {
+            final int[] aint = intArray.getAsIntArray();
+            if (aint.length == 3) {
+                return Optional.of(new BlockPos(aint[0], aint[1], aint[2]));
+            }
+        }
+        return Optional.empty();
     }
 
 }
