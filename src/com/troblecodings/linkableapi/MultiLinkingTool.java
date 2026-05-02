@@ -1,14 +1,15 @@
 package com.troblecodings.linkableapi;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.google.common.base.Predicate;
 import com.troblecodings.tcredstone.TCRedstoneMain;
 
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.component.type.TooltipDisplayComponent;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemGroups;
@@ -17,7 +18,6 @@ import net.minecraft.item.ItemUsageContext;
 import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtHelper;
 import net.minecraft.nbt.NbtIntArray;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.text.Text;
@@ -86,12 +86,12 @@ public class MultiLinkingTool extends Linkingtool {
                     if (list == null) {
                         list = new NbtList();
                     }
-                    final NbtElement posTag = NbtHelper.fromBlockPos(pos);
+                    final NbtElement posTag = writeBlockPos(pos);
                     if (list.contains(posTag)) {
                         message(player, "lt.setpos.msg");
                         return ActionResult.FAIL;
                     }
-                    list.add(NbtHelper.fromBlockPos(pos));
+                    list.add(writeBlockPos(pos));
                     tagFromFunction.test(levelIn, pos, list);
                     itemTag.put(LINKED_BLOCKS, list);
                     stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
@@ -110,12 +110,12 @@ public class MultiLinkingTool extends Linkingtool {
             if (list == null) {
                 list = new NbtList();
             }
-            final NbtElement posTag = NbtHelper.fromBlockPos(pos);
+            final NbtElement posTag = writeBlockPos(pos);
             if (list.contains(posTag)) {
                 message(player, "lt.setpos.msg");
                 return ActionResult.FAIL;
             }
-            list.add(NbtHelper.fromBlockPos(pos));
+            list.add(writeBlockPos(pos));
             tagFromFunction.test(levelIn, pos, list);
             itemTag.put(LINKED_BLOCKS, list);
             stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
@@ -143,7 +143,8 @@ public class MultiLinkingTool extends Linkingtool {
 
     @Override
     public void appendTooltip(final ItemStack stack, final TooltipContext context,
-            final List<Text> tooltip, final TooltipType type) {
+            final TooltipDisplayComponent display, final Consumer<Text> tooltip,
+            final TooltipType type) {
         final NbtCompound itemTag = getOrCreateNbt(stack);
         if (itemTag.contains(LINKED_BLOCKS)) {
             final NbtList list = (NbtList) itemTag.get(LINKED_BLOCKS);

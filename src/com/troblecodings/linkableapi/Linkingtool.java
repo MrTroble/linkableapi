@@ -1,13 +1,14 @@
 package com.troblecodings.linkableapi;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 
 import com.google.common.base.Predicate;
 import com.troblecodings.tcredstone.TCRedstoneMain;
 
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.component.type.TooltipDisplayComponent;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
@@ -17,7 +18,7 @@ import net.minecraft.item.ItemUsageContext;
 import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtHelper;
+import net.minecraft.nbt.NbtIntArray;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
@@ -73,7 +74,7 @@ public class Linkingtool extends Item implements Message {
                     message(player, "lt.notset", pos.toString());
                     return ActionResult.PASS;
                 }
-                final Optional<BlockPos> lpos = NbtHelper.toBlockPos(itemTag, LINKINGTOOL_TAG);
+                final Optional<BlockPos> lpos = readBlockPos(itemTag, LINKINGTOOL_TAG);
                 if (controller.link(lpos, itemTag)) {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                     removeToolTag(stack);
@@ -90,7 +91,7 @@ public class Linkingtool extends Item implements Message {
                         message(player, "lt.setpos.msg");
                         return ActionResult.FAIL;
                     }
-                    final NbtElement newToolTag = NbtHelper.fromBlockPos(pos);
+                    final NbtElement newToolTag = writeBlockPos(pos);
                     tagFromFunction.test(levelIn, pos, newToolTag);
                     itemTag.put(LINKINGTOOL_TAG, newToolTag);
                     stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
@@ -109,7 +110,7 @@ public class Linkingtool extends Item implements Message {
                 message(player, "lt.setpos.msg");
                 return ActionResult.FAIL;
             }
-            final NbtElement newToolTag = NbtHelper.fromBlockPos(pos);
+            final NbtElement newToolTag = writeBlockPos(pos);
             tagFromFunction.test(levelIn, pos, newToolTag);
             itemTag.put(LINKINGTOOL_TAG, newToolTag);
             stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
@@ -139,11 +140,12 @@ public class Linkingtool extends Item implements Message {
 
     @Override
     public void appendTooltip(final ItemStack stack, final TooltipContext context,
-            final List<Text> tooltip, final TooltipType type) {
+            final TooltipDisplayComponent display, final Consumer<Text> tooltip,
+            final TooltipType type) {
         final NbtCompound tag = getOrCreateNbt(stack);
         if (tag.contains(LINKINGTOOL_TAG)) {
-            final Optional<BlockPos> pos = NbtHelper.toBlockPos(tag, LINKINGTOOL_TAG);
-            if (pos.get() == null)
+            final Optional<BlockPos> pos = readBlockPos(tag, LINKINGTOOL_TAG);
+            if (pos.isEmpty())
                 return;
             tooltip(tooltip, "lt.linkedpos", pos.get().getX(), pos.get().getY(), pos.get().getZ());
             return;
@@ -152,7 +154,22 @@ public class Linkingtool extends Item implements Message {
         tooltip(tooltip, "lt.notlinked.msg");
     }
 
-    public void tooltip(final List<Text> list, final String text, final Object... obj) {
-        list.add(getComponent(text, obj));
+    public void tooltip(final Consumer<Text> sink, final String text, final Object... obj) {
+        sink.accept(getComponent(text, obj));
+    }
+
+    public static NbtElement writeBlockPos(final BlockPos pos) {
+        return new NbtIntArray(new int[] { pos.getX(), pos.getY(), pos.getZ() });
+    }
+
+    public static Optional<BlockPos> readBlockPos(final NbtCompound tag, final String key) {
+        final NbtElement posTag = tag.get(key);
+        if (posTag instanceof NbtIntArray intArray) {
+            final int[] aint = intArray.getIntArray();
+            if (aint.length == 3) {
+                return Optional.of(new BlockPos(aint[0], aint[1], aint[2]));
+            }
+        }
+        return Optional.empty();
     }
 }
