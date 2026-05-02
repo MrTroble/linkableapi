@@ -9,7 +9,7 @@ import com.troblecodings.tcredstone.TCRedstoneMain;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -33,19 +33,22 @@ public class Linkingtool extends Item implements Message {
     protected final CreativeModeTab tab;
     protected final TaggableFunction tagFromFunction;
 
-    public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate) {
-        this(tab, predicate, _u -> true);
+    public Linkingtool(final Properties properties, final CreativeModeTab tab,
+            final BiPredicate<Level, BlockPos> predicate) {
+        this(properties, tab, predicate, _u -> true);
     }
 
-    public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
+    public Linkingtool(final Properties properties, final CreativeModeTab tab,
+            final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet) {
-        this(tab, predicate, predicateSet, (_u1, _u2, _u3) -> {
+        this(properties, tab, predicate, predicateSet, (_u1, _u2, _u3) -> {
         });
     }
 
-    public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
+    public Linkingtool(final Properties properties, final CreativeModeTab tab,
+            final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
-        super(new Properties().durability(64));
+        super(properties.durability(64));
         this.predicate = predicate;
         this.predicateSet = predicateSet;
         this.tab = tab;
@@ -58,7 +61,7 @@ public class Linkingtool extends Item implements Message {
         if (player == null)
             return InteractionResult.FAIL;
         final Level levelIn = ctx.getLevel();
-        if (levelIn.isClientSide)
+        if (levelIn.isClientSide())
             return InteractionResult.PASS;
         final BlockPos pos = ctx.getClickedPos();
         final BlockEntity entity = levelIn.getBlockEntity(pos);
@@ -71,7 +74,7 @@ public class Linkingtool extends Item implements Message {
                     message(player, "lt.notset", pos.toString());
                     return InteractionResult.PASS;
                 }
-                final Optional<BlockPos> lpos = NbtUtils.readBlockPos(itemTag, LINKINGTOOL_TAG);
+                final Optional<BlockPos> lpos = readBlockPos(itemTag, LINKINGTOOL_TAG);
                 if (controller.link(lpos, itemTag)) {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                     removeToolTag(stack);
@@ -89,7 +92,7 @@ public class Linkingtool extends Item implements Message {
                         message(player, "lt.setpos.msg");
                         return InteractionResult.FAIL;
                     }
-                    final Tag newToolTag = NbtUtils.writeBlockPos(pos);
+                    final Tag newToolTag = writeBlockPos(pos);
                     tagFromFunction.test(levelIn, pos, newToolTag);
                     itemTag.put(LINKINGTOOL_TAG, newToolTag);
                     stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
@@ -108,7 +111,7 @@ public class Linkingtool extends Item implements Message {
                 message(player, "lt.setpos.msg");
                 return InteractionResult.FAIL;
             }
-            final Tag newToolTag = NbtUtils.writeBlockPos(pos);
+            final Tag newToolTag = writeBlockPos(pos);
             tagFromFunction.test(levelIn, pos, newToolTag);
             itemTag.put(LINKINGTOOL_TAG, newToolTag);
             stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
@@ -142,8 +145,8 @@ public class Linkingtool extends Item implements Message {
             final TooltipFlag flagIn) {
         final CompoundTag tag = getOrCreateNbt(stack);
         if (tag.contains(LINKINGTOOL_TAG)) {
-            final Optional<BlockPos> pos = NbtUtils.readBlockPos(tag, LINKINGTOOL_TAG);
-            if (pos.get() == null)
+            final Optional<BlockPos> pos = readBlockPos(tag, LINKINGTOOL_TAG);
+            if (pos.isEmpty())
                 return;
             tooltip(tooltip, "lt.linkedpos", pos.get().getX(), pos.get().getY(), pos.get().getZ());
             return;
@@ -152,7 +155,22 @@ public class Linkingtool extends Item implements Message {
         tooltip(tooltip, "lt.notlinked.msg");
     }
 
-    public void tooltip(final Consumer<Component> list, final String text, final Object... obj) {
-        list.accept(getComponent(text, obj));
+    public void tooltip(final Consumer<Component> sink, final String text, final Object... obj) {
+        sink.accept(getComponent(text, obj));
+    }
+
+    public static Tag writeBlockPos(final BlockPos pos) {
+        return new IntArrayTag(new int[] { pos.getX(), pos.getY(), pos.getZ() });
+    }
+
+    public static Optional<BlockPos> readBlockPos(final CompoundTag tag, final String key) {
+        final Tag posTag = tag.get(key);
+        if (posTag instanceof IntArrayTag intArray) {
+            final int[] aint = intArray.getAsIntArray();
+            if (aint.length == 3) {
+                return Optional.of(new BlockPos(aint[0], aint[1], aint[2]));
+            }
+        }
+        return Optional.empty();
     }
 }

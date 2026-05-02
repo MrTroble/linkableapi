@@ -12,7 +12,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -30,18 +29,21 @@ public class MultiLinkingTool extends Linkingtool {
 
     private static final String LINKED_BLOCKS = "linkedBlocks";
 
-    public MultiLinkingTool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate) {
-        super(tab, predicate);
+    public MultiLinkingTool(final Properties properties, final CreativeModeTab tab,
+            final BiPredicate<Level, BlockPos> predicate) {
+        super(properties, tab, predicate);
     }
 
-    public MultiLinkingTool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
+    public MultiLinkingTool(final Properties properties, final CreativeModeTab tab,
+            final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
-        super(tab, predicate, predicateSet, function);
+        super(properties, tab, predicate, predicateSet, function);
     }
 
-    public MultiLinkingTool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
+    public MultiLinkingTool(final Properties properties, final CreativeModeTab tab,
+            final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet) {
-        super(tab, predicate, predicateSet);
+        super(properties, tab, predicate, predicateSet);
     }
 
     @Override
@@ -50,7 +52,7 @@ public class MultiLinkingTool extends Linkingtool {
         if (player == null)
             return InteractionResult.FAIL;
         final Level levelIn = ctx.getLevel();
-        if (levelIn.isClientSide)
+        if (levelIn.isClientSide())
             return InteractionResult.PASS;
         final BlockPos pos = ctx.getClickedPos();
         final BlockEntity entity = levelIn.getBlockEntity(pos);
@@ -76,23 +78,23 @@ public class MultiLinkingTool extends Linkingtool {
                         });
                 removeToolTag(stack);
                 message(player, "lt.reset");
-                stack.hurtAndBreak(1, (ServerLevel) levelIn, player, item -> {
+                stack.hurtAndBreak(list.size(), (ServerLevel) levelIn, player, item -> {
                 });
-                return InteractionResult.FAIL;
+                return InteractionResult.SUCCESS;
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
-                    ListTag list = (ListTag) itemTag.get(LINKED_BLOCKS);
-                    if (list == null) {
-                        list = new ListTag();
+                    ListTag tagList = (ListTag) itemTag.get(LINKED_BLOCKS);
+                    if (tagList == null) {
+                        tagList = new ListTag();
                     }
-                    final Tag posTag = NbtUtils.writeBlockPos(pos);
-                    if (list.contains(posTag)) {
+                    final Tag posTag = writeBlockPos(pos);
+                    if (tagList.contains(posTag)) {
                         message(player, "lt.setpos.msg");
                         return InteractionResult.FAIL;
                     }
-                    list.add(NbtUtils.writeBlockPos(pos));
-                    tagFromFunction.test(levelIn, pos, list);
-                    itemTag.put(LINKED_BLOCKS, list);
+                    tagList.add(writeBlockPos(pos));
+                    tagFromFunction.test(levelIn, pos, tagList);
+                    itemTag.put(LINKED_BLOCKS, tagList);
                     stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
                     message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
                     message(player, "lt.setpos.msg");
@@ -105,18 +107,18 @@ public class MultiLinkingTool extends Linkingtool {
             }
             return InteractionResult.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
-            ListTag list = (ListTag) itemTag.get(LINKED_BLOCKS);
-            if (list == null) {
-                list = new ListTag();
+            ListTag tagList = (ListTag) itemTag.get(LINKED_BLOCKS);
+            if (tagList == null) {
+                tagList = new ListTag();
             }
-            final Tag posTag = NbtUtils.writeBlockPos(pos);
-            if (list.contains(posTag)) {
+            final Tag posTag = writeBlockPos(pos);
+            if (tagList.contains(posTag)) {
                 message(player, "lt.setpos.msg");
                 return InteractionResult.FAIL;
             }
-            list.add(NbtUtils.writeBlockPos(pos));
-            tagFromFunction.test(levelIn, pos, list);
-            itemTag.put(LINKED_BLOCKS, list);
+            tagList.add(posTag);
+            tagFromFunction.test(levelIn, pos, tagList);
+            itemTag.put(LINKED_BLOCKS, tagList);
             stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
