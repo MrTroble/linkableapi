@@ -1,12 +1,12 @@
 package com.troblecodings.linkableapi;
 
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.Tag;
+import net.minecraft.world.level.Level;
 
 @FunctionalInterface
 public interface TaggableFunction {
 
-    void test(World level, BlockPos pos, NbtElement newToolTag);
+    void test(Level level, BlockPos pos, Tag newToolTag);
 
 }

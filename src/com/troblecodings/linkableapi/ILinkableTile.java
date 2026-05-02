@@ -2,8 +2,8 @@ package com.troblecodings.linkableapi;
 
 import java.util.Optional;
 
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 
 public interface ILinkableTile {
 
@@ -14,7 +14,7 @@ public interface ILinkableTile {
         return false;
     }
 
-    default boolean link(final Optional<BlockPos> pos, final NbtCompound tag) {
+    default boolean link(final Optional<BlockPos> pos, final CompoundTag tag) {
         return link(pos);
     }
 

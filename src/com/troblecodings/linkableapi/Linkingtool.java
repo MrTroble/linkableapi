@@ -7,45 +7,45 @@ import java.util.function.Consumer;
 import com.google.common.base.Predicate;
 import com.troblecodings.tcredstone.TCRedstoneMain;
 
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.component.type.TooltipDisplayComponent;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroups;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUsageContext;
-import net.minecraft.item.tooltip.TooltipType;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtHelper;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class Linkingtool extends Item implements Message {
 
     protected static final String LINKINGTOOL_TAG = "linkingToolTag";
 
-    protected final BiPredicate<World, BlockPos> predicate;
+    protected final BiPredicate<Level, BlockPos> predicate;
     protected final Predicate<BlockEntity> predicateSet;
-    protected final ItemGroups tab;
+    protected final CreativeModeTab tab;
     protected final TaggableFunction tagFromFunction;
 
-    public Linkingtool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate) {
+    public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate) {
         this(tab, predicate, _u -> true);
     }
 
-    public Linkingtool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate,
+    public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet) {
         this(tab, predicate, predicateSet, (_u1, _u2, _u3) -> {
         });
     }
 
-    public Linkingtool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate,
+    public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
-        super(new Settings().maxDamage(64));
+        super(new Properties().durability(64));
         this.predicate = predicate;
         this.predicateSet = predicateSet;
         this.tab = tab;
@@ -53,95 +53,96 @@ public class Linkingtool extends Item implements Message {
     }
 
     @Override
-    public ActionResult useOnBlock(final ItemUsageContext ctx) {
-        final PlayerEntity player = ctx.getPlayer();
+    public InteractionResult useOn(final UseOnContext ctx) {
+        final Player player = ctx.getPlayer();
         if (player == null)
-            return ActionResult.FAIL;
-        final World levelIn = ctx.getWorld();
-        if (levelIn.isClient())
-            return ActionResult.PASS;
-        final BlockPos pos = ctx.getBlockPos();
+            return InteractionResult.FAIL;
+        final Level levelIn = ctx.getLevel();
+        if (levelIn.isClientSide)
+            return InteractionResult.PASS;
+        final BlockPos pos = ctx.getClickedPos();
         final BlockEntity entity = levelIn.getBlockEntity(pos);
-        final ItemStack stack = ctx.getStack();
-        final NbtCompound itemTag = getOrCreateNbt(stack);
+        final ItemStack stack = ctx.getItemInHand();
+        final CompoundTag itemTag = getOrCreateNbt(stack);
         if (entity instanceof ILinkableTile && this.predicateSet.apply(entity)) {
             final ILinkableTile controller = (ILinkableTile) entity;
-            if (!player.isSneaking()) {
+            if (!player.isShiftKeyDown()) {
                 if (!itemTag.contains(LINKINGTOOL_TAG)) {
                     message(player, "lt.notset", pos.toString());
-                    return ActionResult.PASS;
+                    return InteractionResult.PASS;
                 }
-                final Optional<BlockPos> lpos = NbtHelper.toBlockPos(itemTag, LINKINGTOOL_TAG);
+                final Optional<BlockPos> lpos = NbtUtils.readBlockPos(itemTag, LINKINGTOOL_TAG);
                 if (controller.link(lpos, itemTag)) {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                     removeToolTag(stack);
                     message(player, "lt.reset");
-                    stack.damage(1, player, EquipmentSlot.MAINHAND);
-                    return ActionResult.SUCCESS;
+                    stack.hurtAndBreak(1, (ServerLevel) levelIn, player, item -> {
+                    });
+                    return InteractionResult.SUCCESS;
                 }
                 message(player, "lt.notlinked");
                 message(player, "lt.notlinked.msg");
-                return ActionResult.FAIL;
+                return InteractionResult.FAIL;
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
                     if (itemTag.contains(LINKINGTOOL_TAG)) {
                         message(player, "lt.setpos.msg");
-                        return ActionResult.FAIL;
+                        return InteractionResult.FAIL;
                     }
-                    final NbtElement newToolTag = NbtHelper.fromBlockPos(pos);
+                    final Tag newToolTag = NbtUtils.writeBlockPos(pos);
                     tagFromFunction.test(levelIn, pos, newToolTag);
                     itemTag.put(LINKINGTOOL_TAG, newToolTag);
                     stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
                     message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
                     message(player, "lt.setpos.msg");
-                    return ActionResult.SUCCESS;
+                    return InteractionResult.SUCCESS;
                 }
                 if (controller.hasLink() && controller.unlink()) {
                     message(player, "lt.unlink");
-                    return ActionResult.SUCCESS;
+                    return InteractionResult.SUCCESS;
                 }
             }
-            return ActionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         } else if (predicate.test(levelIn, pos)) {
             if (itemTag.contains(LINKINGTOOL_TAG)) {
                 message(player, "lt.setpos.msg");
-                return ActionResult.FAIL;
+                return InteractionResult.FAIL;
             }
-            final NbtElement newToolTag = NbtHelper.fromBlockPos(pos);
+            final Tag newToolTag = NbtUtils.writeBlockPos(pos);
             tagFromFunction.test(levelIn, pos, newToolTag);
             itemTag.put(LINKINGTOOL_TAG, newToolTag);
             stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
-            return ActionResult.SUCCESS;
-        } else if (player.isSneaking()) {
+            return InteractionResult.SUCCESS;
+        } else if (player.isShiftKeyDown()) {
             removeToolTag(stack);
             message(player, "lt.reset");
-            return ActionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         }
-        return ActionResult.FAIL;
+        return InteractionResult.FAIL;
     }
 
     public void removeToolTag(final ItemStack stack) {
         stack.remove(TCRedstoneMain.COMPOUND_DATA);
     }
 
-    protected static NbtCompound getOrCreateNbt(final ItemStack stack) {
-        NbtCompound nbt = stack.get(TCRedstoneMain.COMPOUND_DATA);
+    protected static CompoundTag getOrCreateNbt(final ItemStack stack) {
+        CompoundTag nbt = stack.get(TCRedstoneMain.COMPOUND_DATA);
         if (nbt == null) {
-            nbt = new NbtCompound();
+            nbt = new CompoundTag();
             stack.set(TCRedstoneMain.COMPOUND_DATA, nbt);
         }
         return nbt;
     }
 
     @Override
-    public void appendTooltip(final ItemStack stack, final TooltipContext context,
-            final TooltipDisplayComponent component, final Consumer<Text> tooltip,
-            final TooltipType type) {
-        final NbtCompound tag = getOrCreateNbt(stack);
+    public void appendHoverText(final ItemStack stack, final TooltipContext ctx,
+            final TooltipDisplay display, final Consumer<Component> tooltip,
+            final TooltipFlag flagIn) {
+        final CompoundTag tag = getOrCreateNbt(stack);
         if (tag.contains(LINKINGTOOL_TAG)) {
-            final Optional<BlockPos> pos = NbtHelper.toBlockPos(tag, LINKINGTOOL_TAG);
+            final Optional<BlockPos> pos = NbtUtils.readBlockPos(tag, LINKINGTOOL_TAG);
             if (pos.get() == null)
                 return;
             tooltip(tooltip, "lt.linkedpos", pos.get().getX(), pos.get().getY(), pos.get().getZ());
@@ -151,7 +152,7 @@ public class Linkingtool extends Item implements Message {
         tooltip(tooltip, "lt.notlinked.msg");
     }
 
-    public void tooltip(final Consumer<Text> list, final String text, final Object... obj) {
+    public void tooltip(final Consumer<Component> list, final String text, final Object... obj) {
         list.accept(getComponent(text, obj));
     }
 }
