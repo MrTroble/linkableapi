@@ -12,7 +12,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -29,21 +28,22 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 public class MultiLinkingTool extends Linkingtool implements Message {
 
     private static final String LINKED_BLOCKS = "linkedBlocks";
-    // private static final String MULTILINKINGTOOL_TAG = "multiLinkingToolTag";
 
-    public MultiLinkingTool(final CreativeModeTab tab,
+    public MultiLinkingTool(final Properties properties, final CreativeModeTab tab,
             final BiPredicate<Level, BlockPos> predicate) {
-        super(tab, predicate);
+        super(properties, tab, predicate);
     }
 
-    public MultiLinkingTool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
+    public MultiLinkingTool(final Properties properties, final CreativeModeTab tab,
+            final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
-        super(tab, predicate, predicateSet, function);
+        super(properties, tab, predicate, predicateSet, function);
     }
 
-    public MultiLinkingTool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
+    public MultiLinkingTool(final Properties properties, final CreativeModeTab tab,
+            final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet) {
-        super(tab, predicate, predicateSet);
+        super(properties, tab, predicate, predicateSet);
     }
 
     @Override
@@ -52,7 +52,7 @@ public class MultiLinkingTool extends Linkingtool implements Message {
         if (player == null)
             return InteractionResult.FAIL;
         final Level levelIn = ctx.getLevel();
-        if (levelIn.isClientSide)
+        if (levelIn.isClientSide())
             return InteractionResult.PASS;
         final BlockPos pos = ctx.getClickedPos();
         final BlockEntity entity = levelIn.getBlockEntity(pos);
@@ -87,12 +87,12 @@ public class MultiLinkingTool extends Linkingtool implements Message {
                     if (tagList == null) {
                         tagList = new ListTag();
                     }
-                    final Tag posTag = NbtUtils.writeBlockPos(pos);
+                    final Tag posTag = writeBlockPos(pos);
                     if (tagList.contains(posTag)) {
                         message(player, "lt.setpos.msg");
                         return InteractionResult.FAIL;
                     }
-                    tagList.add(NbtUtils.writeBlockPos(pos));
+                    tagList.add(writeBlockPos(pos));
                     tagFromFunction.test(levelIn, pos, tagList);
                     itemTag.put(LINKED_BLOCKS, tagList);
                     stack.set(GIRCRedstoneMain.COMPOUND_DATA, itemTag);
@@ -111,7 +111,7 @@ public class MultiLinkingTool extends Linkingtool implements Message {
             if (tagList == null) {
                 tagList = new ListTag();
             }
-            final Tag posTag = NbtUtils.writeBlockPos(pos);
+            final Tag posTag = writeBlockPos(pos);
             if (tagList.contains(posTag)) {
                 message(player, "lt.setpos.msg");
                 return InteractionResult.FAIL;
