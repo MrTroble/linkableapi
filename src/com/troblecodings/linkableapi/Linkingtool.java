@@ -12,6 +12,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CreativeModeTab;
@@ -89,7 +90,8 @@ public class Linkingtool extends Item implements Message {
                     message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                     removeToolTag(stack);
                     message(player, "lt.reset");
-                    stack.hurtAndBreak(1, player, getEquipmentSlot(stack));
+                    stack.hurtAndBreak(1, (ServerLevel) levelIn, player, item -> {
+                    });
                     return InteractionResult.SUCCESS;
                 }
                 message(player, "lt.notlinked");
