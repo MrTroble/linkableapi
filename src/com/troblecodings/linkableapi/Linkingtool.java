@@ -34,19 +34,22 @@ public class Linkingtool extends Item implements Message {
     protected final CreativeModeTab tab;
     protected final TaggableFunction tagFromFunction;
 
-    public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate) {
-        this(tab, predicate, _u -> true);
+    public Linkingtool(final Properties properties, final CreativeModeTab tab,
+            final BiPredicate<Level, BlockPos> predicate) {
+        this(properties, tab, predicate, _u -> true);
     }
 
-    public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
+    public Linkingtool(final Properties properties, final CreativeModeTab tab,
+            final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet) {
-        this(tab, predicate, predicateSet, (_u1, _u2, _u3) -> {
+        this(properties, tab, predicate, predicateSet, (_u1, _u2, _u3) -> {
         });
     }
 
-    public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
+    public Linkingtool(final Properties properties, final CreativeModeTab tab,
+            final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
-        super(new Properties().durability(64));
+        super(properties.durability(64));
         this.predicate = predicate;
         this.predicateSet = predicateSet;
         this.tab = tab;

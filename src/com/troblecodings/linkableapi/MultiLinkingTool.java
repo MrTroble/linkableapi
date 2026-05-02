@@ -29,19 +29,21 @@ public class MultiLinkingTool extends Linkingtool implements Message {
     private static final String LINKED_BLOCKS = "linkedBlocks";
     // private static final String MULTILINKINGTOOL_TAG = "multiLinkingToolTag";
 
-    public MultiLinkingTool(final CreativeModeTab tab,
+    public MultiLinkingTool(final Properties properties, final CreativeModeTab tab,
             final BiPredicate<Level, BlockPos> predicate) {
-        super(tab, predicate);
+        super(properties, tab, predicate);
     }
 
-    public MultiLinkingTool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
+    public MultiLinkingTool(final Properties properties, final CreativeModeTab tab,
+            final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
-        super(tab, predicate, predicateSet, function);
+        super(properties, tab, predicate, predicateSet, function);
     }
 
-    public MultiLinkingTool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
+    public MultiLinkingTool(final Properties properties, final CreativeModeTab tab,
+            final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet) {
-        super(tab, predicate, predicateSet);
+        super(properties, tab, predicate, predicateSet);
     }
 
     @Override
