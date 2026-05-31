@@ -43,7 +43,6 @@ public class Linkingtool extends Item implements Message {
         });
     }
 
-    @SuppressWarnings("removal")
     public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
             final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
         super(new Properties().durability(64));
@@ -107,11 +106,11 @@ public class Linkingtool extends Item implements Message {
                 }
                 if (controller.hasLink() && controller.unlink()) {
                     message(player, "lt.unlink");
-                    return InteractionResult.SUCCESS;
                 }
             }
             return InteractionResult.SUCCESS;
-        } else if (predicate.test(levelIn, pos)) {
+        }
+        if (predicate.test(levelIn, pos)) {
             if (itemTag.contains(LINKINGTOOL_TAG)) {
                 message(player, "lt.setpos.msg");
                 return InteractionResult.FAIL;
