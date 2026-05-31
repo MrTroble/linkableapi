@@ -74,32 +74,31 @@ public class MultiLinkingTool extends Linkingtool {
                 message(player, "lt.reset");
                 stack.damage(1, player, (user) -> user.sendToolBreakStatus(ctx.getHand()));
                 return ActionResult.FAIL;
-            } else {
-                if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
-                    ListTag list = (ListTag) toolTag.get(LINKED_BLOCKS);
-                    if (list == null) {
-                        list = new ListTag();
-                    }
-                    final CompoundTag posTag = NbtHelper.fromBlockPos(pos);
-                    if (list.contains(posTag)) {
-                        message(player, "lt.setpos.msg");
-                        return ActionResult.FAIL;
-                    }
-                    list.add(NbtHelper.fromBlockPos(pos));
-                    toolTag.put(LINKED_BLOCKS, list);
-                    tagFromFunction.test(levelIn, pos, toolTag);
-                    itemTag.put(MULTILINKINGTOOL_TAG, toolTag);
-                    message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+            }
+            if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
+                ListTag list = (ListTag) toolTag.get(LINKED_BLOCKS);
+                if (list == null) {
+                    list = new ListTag();
+                }
+                final CompoundTag posTag = NbtHelper.fromBlockPos(pos);
+                if (list.contains(posTag)) {
                     message(player, "lt.setpos.msg");
-                    return ActionResult.SUCCESS;
+                    return ActionResult.FAIL;
                 }
-                if (controller.hasLink() && controller.unlink()) {
-                    message(player, "lt.unlink");
-                    return ActionResult.SUCCESS;
-                }
+                list.add(posTag);
+                toolTag.put(LINKED_BLOCKS, list);
+                tagFromFunction.test(levelIn, pos, toolTag);
+                itemTag.put(MULTILINKINGTOOL_TAG, toolTag);
+                message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+                message(player, "lt.setpos.msg");
+                return ActionResult.SUCCESS;
+            }
+            if (controller.hasLink() && controller.unlink()) {
+                message(player, "lt.unlink");
             }
             return ActionResult.SUCCESS;
-        } else if (predicate.test(levelIn, pos)) {
+        }
+        if (predicate.test(levelIn, pos)) { // Block aufnehmen
             ListTag list = (ListTag) toolTag.get(LINKED_BLOCKS);
             if (list == null) {
                 list = new ListTag();
@@ -109,14 +108,16 @@ public class MultiLinkingTool extends Linkingtool {
                 message(player, "lt.setpos.msg");
                 return ActionResult.FAIL;
             }
-            list.add(NbtHelper.fromBlockPos(pos));
+            list.add(posTag);
             toolTag.put(LINKED_BLOCKS, list);
             tagFromFunction.test(levelIn, pos, toolTag);
-            stack.setTag(toolTag);
+            itemTag.put(MULTILINKINGTOOL_TAG, toolTag);
+            stack.setTag(itemTag);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return ActionResult.SUCCESS;
-        } else if (player.isSneaking()) {
+        }
+        if (player.isSneaking()) {
             removeToolTag(stack);
             message(player, "lt.reset");
             return ActionResult.SUCCESS;
@@ -135,7 +136,7 @@ public class MultiLinkingTool extends Linkingtool {
         final CompoundTag itemTag = stack.getOrCreateTag();
         final CompoundTag toolTag = itemTag.getCompound(MULTILINKINGTOOL_TAG);
         if (toolTag != null) {
-            final ListTag list = (ListTag) itemTag.get(LINKED_BLOCKS);
+            final ListTag list = (ListTag) toolTag.get(LINKED_BLOCKS);
             if (list != null) {
                 tooltip(tooltip, "lt.linkedpos",
                         list.stream().map(tag -> NbtHelper.toBlockPos((CompoundTag) tag))
