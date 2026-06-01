@@ -109,10 +109,11 @@ public class MultiLinkingTool extends Linkingtool {
                 message(player, "lt.setpos.msg");
                 return ActionResult.FAIL;
             }
-            list.add(NbtHelper.fromBlockPos(pos));
+            list.add(posTag);
             toolTag.put(LINKED_BLOCKS, list);
             tagFromFunction.test(levelIn, pos, toolTag);
             itemTag.put(MULTILINKINGTOOL_TAG, toolTag);
+            stack.setTag(itemTag);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return ActionResult.SUCCESS;
@@ -135,7 +136,7 @@ public class MultiLinkingTool extends Linkingtool {
         final NbtCompound itemTag = stack.getOrCreateTag();
         final NbtCompound toolTag = itemTag.getCompound(MULTILINKINGTOOL_TAG);
         if (toolTag != null) {
-            final NbtList list = (NbtList) itemTag.get(LINKED_BLOCKS);
+            final NbtList list = (NbtList) toolTag.get(LINKED_BLOCKS);
             if (list != null) {
                 tooltip(tooltip, "lt.linkedpos",
                         list.stream().map(tag -> NbtHelper.toBlockPos((NbtCompound) tag))
