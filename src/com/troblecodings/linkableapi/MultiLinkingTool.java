@@ -13,6 +13,7 @@ import net.minecraft.item.ItemGroups;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtHelper;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.text.Text;
@@ -95,11 +96,11 @@ public class MultiLinkingTool extends Linkingtool {
                 }
                 if (controller.hasLink() && controller.unlink()) {
                     message(player, "lt.unlink");
-                    return ActionResult.SUCCESS;
                 }
             }
             return ActionResult.SUCCESS;
-        } else if (predicate.test(levelIn, pos)) {
+        }
+        if (predicate.test(levelIn, pos)) {
             NbtList list = (NbtList) toolTag.get(LINKED_BLOCKS);
             if (list == null) {
                 list = new NbtList();
@@ -135,13 +136,19 @@ public class MultiLinkingTool extends Linkingtool {
         final NbtCompound itemTag = stack.getOrCreateNbt();
         final NbtCompound toolTag = itemTag.getCompound(MULTILINKINGTOOL_TAG);
         if (toolTag != null) {
-            final NbtList list = (NbtList) toolTag.get(LINKED_BLOCKS);
-            if (list != null) {
-                tooltip(tooltip, "lt.linkedpos",
-                        list.stream().map(tag -> NbtHelper.toBlockPos((NbtCompound) tag))
-                                .collect(Collectors.toList()));
-                return;
+            NbtList list = toolTag.getList(LINKED_BLOCKS, NbtElement.COMPOUND_TYPE);
+
+            List<BlockPos> positions =
+                    list.stream().map(tag -> NbtHelper.toBlockPos((NbtCompound) tag))
+                            .collect(Collectors.toList());
+
+            for (BlockPos pos : positions) {
+                tooltip.add(
+                        Text.translatable("lt.linkedpos", Text.literal(String.valueOf(pos.getX())),
+                                Text.literal(String.valueOf(pos.getY())),
+                                Text.literal(String.valueOf(pos.getZ()))));
             }
+            return;
         }
         tooltip(tooltip, "lt.notlinked");
         tooltip(tooltip, "lt.notlinked.msg");
