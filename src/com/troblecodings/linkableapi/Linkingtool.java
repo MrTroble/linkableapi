@@ -97,12 +97,14 @@ public class Linkingtool extends Item implements Message {
                 }
                 if (controller.hasLink() && controller.unlink()) {
                     message(player, "lt.unlink");
-                    return ActionResult.SUCCESS;
                 }
             }
             return ActionResult.SUCCESS;
-        } else if (predicate.test(levelIn, pos)) {
-            if (stack.getNbt() != null) {
+        }
+        if (predicate.test(levelIn, pos)) {
+            final boolean containsPos =
+                    toolTag.contains("X") && toolTag.contains("Y") && toolTag.contains("Z");
+            if (containsPos) {
                 message(player, "lt.setpos.msg");
                 return ActionResult.FAIL;
             }
