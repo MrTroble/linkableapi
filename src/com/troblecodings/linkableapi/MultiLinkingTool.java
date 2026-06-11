@@ -3,7 +3,6 @@ package com.troblecodings.linkableapi;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
-import java.util.stream.Collectors;
 
 import com.google.common.base.Predicate;
 import com.troblecodings.tcredstone.TCRedstoneMain;
@@ -76,7 +75,6 @@ public class MultiLinkingTool extends Linkingtool {
                 removeToolTag(stack);
                 message(player, "lt.reset");
                 stack.damage(1, player, EquipmentSlot.MAINHAND);
-                return ActionResult.FAIL;
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
                     NbtList list = (NbtList) itemTag.get(LINKED_BLOCKS);
@@ -98,11 +96,11 @@ public class MultiLinkingTool extends Linkingtool {
                 }
                 if (controller.hasLink() && controller.unlink()) {
                     message(player, "lt.unlink");
-                    return ActionResult.SUCCESS;
                 }
             }
             return ActionResult.SUCCESS;
-        } else if (predicate.test(levelIn, pos)) {
+        }
+        if (predicate.test(levelIn, pos)) {
             NbtList list = (NbtList) itemTag.get(LINKED_BLOCKS);
             if (list == null) {
                 list = new NbtList();
@@ -143,11 +141,15 @@ public class MultiLinkingTool extends Linkingtool {
             final List<Text> tooltip, final TooltipType type) {
         final NbtCompound itemTag = getOrCreateNbt(stack);
         if (itemTag.contains(LINKED_BLOCKS)) {
-            final NbtList list = (NbtList) itemTag.get(LINKED_BLOCKS);
+            NbtList list = (NbtList) itemTag.get(LINKED_BLOCKS);
             if (list != null) {
-                tooltip(tooltip, "lt.linkedpos",
-                        list.stream().map(tag -> toBlockPos((NbtIntArray) tag, LINKED_BLOCKS))
-                                .collect(Collectors.toList()));
+                list.stream().map(tag -> toBlockPos((NbtIntArray) tag, LINKED_BLOCKS).get())
+                        .forEach(pos -> {
+                            tooltip.add(Text.translatable("lt.linkedpos",
+                                    Text.literal(String.valueOf(pos.getX())),
+                                    Text.literal(String.valueOf(pos.getY())),
+                                    Text.literal(String.valueOf(pos.getZ()))));
+                        });
                 return;
             }
         }
