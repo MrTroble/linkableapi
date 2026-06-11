@@ -2,7 +2,6 @@ package com.troblecodings.linkableapi;
 
 import java.util.List;
 import java.util.function.BiPredicate;
-import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
@@ -77,32 +76,31 @@ public class MultiLinkingTool extends Linkingtool implements Message {
                 stack.hurtAndBreak(list.size(), player,
                         (user) -> user.broadcastBreakEvent(ctx.getHand()));
                 return InteractionResult.FAIL;
-            } else {
-                if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
-                    ListTag list = (ListTag) toolTag.get(LINKED_BLOCKS);
-                    if (list == null) {
-                        list = new ListTag();
-                    }
-                    final CompoundTag posTag = NbtUtils.writeBlockPos(pos);
-                    if (list.contains(posTag)) {
-                        message(player, "lt.setpos.msg");
-                        return InteractionResult.FAIL;
-                    }
-                    list.add(NbtUtils.writeBlockPos(pos));
-                    toolTag.put(LINKED_BLOCKS, list);
-                    tagFromFunction.test(levelIn, pos, toolTag);
-                    itemTag.put(MULTILINKINGTOOL_TAG, toolTag);
-                    message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+            }
+            if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
+                ListTag list = (ListTag) toolTag.get(LINKED_BLOCKS);
+                if (list == null) {
+                    list = new ListTag();
+                }
+                final CompoundTag posTag = NbtUtils.writeBlockPos(pos);
+                if (list.contains(posTag)) {
                     message(player, "lt.setpos.msg");
-                    return InteractionResult.SUCCESS;
+                    return InteractionResult.FAIL;
                 }
-                if (controller.hasLink() && controller.unlink()) {
-                    message(player, "lt.unlink");
-                    return InteractionResult.SUCCESS;
-                }
+                list.add(NbtUtils.writeBlockPos(pos));
+                toolTag.put(LINKED_BLOCKS, list);
+                tagFromFunction.test(levelIn, pos, toolTag);
+                itemTag.put(MULTILINKINGTOOL_TAG, toolTag);
+                message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+                message(player, "lt.setpos.msg");
+                return InteractionResult.SUCCESS;
+            }
+            if (controller.hasLink() && controller.unlink()) {
+                message(player, "lt.unlink");
             }
             return InteractionResult.SUCCESS;
-        } else if (predicate.test(levelIn, pos)) {
+        }
+        if (predicate.test(levelIn, pos)) {
             ListTag list = (ListTag) toolTag.get(LINKED_BLOCKS);
             if (list == null) {
                 list = new ListTag();
@@ -119,7 +117,8 @@ public class MultiLinkingTool extends Linkingtool implements Message {
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return InteractionResult.SUCCESS;
-        } else if (player.isShiftKeyDown() && stack.getTag() != null) {
+        }
+        if (player.isShiftKeyDown() && stack.getTag() != null) {
             removeToolTag(stack);
             message(player, "lt.reset");
             return InteractionResult.SUCCESS;
@@ -137,14 +136,17 @@ public class MultiLinkingTool extends Linkingtool implements Message {
             final List<Component> tooltip, final TooltipFlag flagIn) {
         final CompoundTag itemTag = stack.getOrCreateTag();
         final CompoundTag toolTag = itemTag.getCompound(MULTILINKINGTOOL_TAG);
-        if (toolTag != null) {
+        if (toolTag.contains(LINKED_BLOCKS)) {
             final ListTag list = (ListTag) toolTag.get(LINKED_BLOCKS);
             if (list != null) {
-                tooltip(tooltip, "lt.linkedpos",
-                        list.stream().map(tag -> NbtUtils.readBlockPos((CompoundTag) tag))
-                                .collect(Collectors.toList()));
-                return;
+                list.stream().map(tag -> NbtUtils.readBlockPos((CompoundTag) tag)).forEach(pos -> {
+                    tooltip.add(Component.translatable("lt.linkedpos",
+                            Component.literal(String.valueOf(pos.getX())),
+                            Component.literal(String.valueOf(pos.getY())),
+                            Component.literal(String.valueOf(pos.getZ()))));
+                });
             }
+            return;
         }
         tooltip(tooltip, "lt.notlinked");
         tooltip(tooltip, "lt.notlinked.msg");
