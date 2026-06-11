@@ -3,7 +3,6 @@ package com.troblecodings.linkableapi;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
-import java.util.stream.Collectors;
 
 import com.google.common.base.Predicate;
 import com.troblecodings.tcredstone.GIRCRedstoneMain;
@@ -77,7 +76,6 @@ public class MultiLinkingTool extends Linkingtool implements Message {
                 removeToolTag(stack);
                 message(player, "lt.reset");
                 stack.hurtAndBreak(list.size(), player, getEquipmentSlot(stack));
-                return InteractionResult.SUCCESS;
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
                     ListTag tagList = (ListTag) itemTag.get(LINKED_BLOCKS);
@@ -99,11 +97,11 @@ public class MultiLinkingTool extends Linkingtool implements Message {
                 }
                 if (controller.hasLink() && controller.unlink()) {
                     message(player, "lt.unlink");
-                    return InteractionResult.SUCCESS;
                 }
             }
             return InteractionResult.SUCCESS;
-        } else if (predicate.test(levelIn, pos)) {
+        }
+        if (predicate.test(levelIn, pos)) {
             ListTag tagList = (ListTag) itemTag.get(LINKED_BLOCKS);
             if (tagList == null) {
                 tagList = new ListTag();
@@ -144,11 +142,15 @@ public class MultiLinkingTool extends Linkingtool implements Message {
             final List<Component> tooltip, final TooltipFlag flagIn) {
         final CompoundTag itemTag = getOrCreateForStack(stack);
         if (itemTag.contains(LINKED_BLOCKS)) {
-            final ListTag toolTag = (ListTag) itemTag.get(LINKED_BLOCKS);
-            if (toolTag != null) {
-                tooltip(tooltip, "lt.linkedpos",
-                        toolTag.stream().map(tag -> readBlockPos((IntArrayTag) tag, LINKED_BLOCKS))
-                                .collect(Collectors.toList()));
+            final ListTag list = (ListTag) itemTag.get(LINKED_BLOCKS);
+            if (list != null) {
+                list.stream().map(tag -> readBlockPos((IntArrayTag) tag, LINKED_BLOCKS).get())
+                        .forEach(pos -> {
+                            tooltip.add(Component.translatable("lt.linkedpos",
+                                    Component.literal(String.valueOf(pos.getX())),
+                                    Component.literal(String.valueOf(pos.getY())),
+                                    Component.literal(String.valueOf(pos.getZ()))));
+                        });
             }
             return;
         }
