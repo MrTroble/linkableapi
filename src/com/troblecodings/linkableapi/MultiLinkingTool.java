@@ -3,7 +3,6 @@ package com.troblecodings.linkableapi;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
-import java.util.stream.Collectors;
 
 import com.google.common.base.Predicate;
 import com.troblecodings.tcredstone.TCRedstoneMain;
@@ -70,13 +69,13 @@ public class MultiLinkingTool extends Linkingtool {
                 list.stream().map(tag -> toBlockPos((NbtIntArray) tag, LINKED_BLOCKS))
                         .forEach(linkPos -> {
                             if (controller.link(linkPos, itemTag)) {
+                                System.out.println(pos);
                                 message(player, "lt.linkedpos", pos.getX(), pos.getY(), pos.getZ());
                             }
                         });
                 removeToolTag(stack);
                 message(player, "lt.reset");
                 stack.damage(1, player, EquipmentSlot.MAINHAND);
-                return ActionResult.FAIL;
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
                     NbtList list = (NbtList) itemTag.get(LINKED_BLOCKS);
@@ -88,7 +87,7 @@ public class MultiLinkingTool extends Linkingtool {
                         message(player, "lt.setpos.msg");
                         return ActionResult.FAIL;
                     }
-                    list.add(NbtHelper.fromBlockPos(pos));
+                    list.add(posTag);
                     tagFromFunction.test(levelIn, pos, list);
                     itemTag.put(LINKED_BLOCKS, list);
                     stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
@@ -98,11 +97,11 @@ public class MultiLinkingTool extends Linkingtool {
                 }
                 if (controller.hasLink() && controller.unlink()) {
                     message(player, "lt.unlink");
-                    return ActionResult.SUCCESS;
                 }
             }
             return ActionResult.SUCCESS;
-        } else if (predicate.test(levelIn, pos)) {
+        }
+        if (predicate.test(levelIn, pos)) {
             NbtList list = (NbtList) itemTag.get(LINKED_BLOCKS);
             if (list == null) {
                 list = new NbtList();
@@ -119,7 +118,8 @@ public class MultiLinkingTool extends Linkingtool {
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return ActionResult.SUCCESS;
-        } else if (player.isSneaking()) {
+        }
+        if (player.isSneaking()) {
             removeToolTag(stack);
             message(player, "lt.reset");
             return ActionResult.SUCCESS;
@@ -143,13 +143,17 @@ public class MultiLinkingTool extends Linkingtool {
             final List<Text> tooltip, final TooltipType type) {
         final NbtCompound itemTag = getOrCreateNbt(stack);
         if (itemTag.contains(LINKED_BLOCKS)) {
-            final NbtList list = (NbtList) itemTag.get(LINKED_BLOCKS);
-            if (list != null) {
-                tooltip(tooltip, "lt.linkedpos",
-                        list.stream().map(tag -> toBlockPos((NbtIntArray) tag, LINKED_BLOCKS))
-                                .collect(Collectors.toList()));
+            NbtList list = (NbtList) itemTag.get(LINKED_BLOCKS);
+            if (list == null)
                 return;
-            }
+            list.stream().map(tag -> toBlockPos((NbtIntArray) tag, LINKED_BLOCKS).get())
+                    .forEach(pos -> {
+                        tooltip.add(Text.translatable("lt.linkedpos",
+                                Text.literal(String.valueOf(pos.getX())),
+                                Text.literal(String.valueOf(pos.getY())),
+                                Text.literal(String.valueOf(pos.getZ()))));
+                    });
+            return;
         }
         tooltip(tooltip, "lt.notlinked");
         tooltip(tooltip, "lt.notlinked.msg");
