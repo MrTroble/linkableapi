@@ -3,7 +3,6 @@ package com.troblecodings.linkableapi;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import com.google.common.base.Predicate;
 import com.troblecodings.tcredstone.TCRedstoneMain;
@@ -36,8 +35,8 @@ public class MultiLinkingTool extends Linkingtool {
     }
 
     public MultiLinkingTool(final Properties properties, final CreativeModeTab tab,
-            final BiPredicate<Level, BlockPos> predicate,
-            final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
+            final BiPredicate<Level, BlockPos> predicate, final Predicate<BlockEntity> predicateSet,
+            final TaggableFunction function) {
         super(properties, tab, predicate, predicateSet, function);
     }
 
@@ -82,7 +81,6 @@ public class MultiLinkingTool extends Linkingtool {
                 stack.hurtAndBreak(list.size(), (ServerLevel) levelIn, (ServerPlayer) player,
                         item -> {
                         });
-                return InteractionResult.SUCCESS;
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
                     ListTag tagList = (ListTag) itemTag.get(LINKED_BLOCKS);
@@ -104,11 +102,11 @@ public class MultiLinkingTool extends Linkingtool {
                 }
                 if (controller.hasLink() && controller.unlink()) {
                     message(player, "lt.unlink");
-                    return InteractionResult.SUCCESS;
                 }
             }
             return InteractionResult.SUCCESS;
-        } else if (predicate.test(levelIn, pos)) {
+        }
+        if (predicate.test(levelIn, pos)) {
             ListTag tagList = (ListTag) itemTag.get(LINKED_BLOCKS);
             if (tagList == null) {
                 tagList = new ListTag();
@@ -125,7 +123,8 @@ public class MultiLinkingTool extends Linkingtool {
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return InteractionResult.SUCCESS;
-        } else if (player.isShiftKeyDown()) {
+        }
+        if (player.isShiftKeyDown()) {
             removeToolTag(stack);
             message(player, "lt.reset");
             return InteractionResult.SUCCESS;
@@ -144,17 +143,22 @@ public class MultiLinkingTool extends Linkingtool {
                 : Optional.empty();
     }
 
+    // TODO maybe this isn't correct
     @Override
     public void appendHoverText(final ItemStack stack, final TooltipContext ctx,
             final TooltipDisplay display, final Consumer<Component> tooltip,
             final TooltipFlag flagIn) {
         final CompoundTag itemTag = getOrCreateNbt(stack);
         if (itemTag.contains(LINKED_BLOCKS)) {
-            final ListTag list = (ListTag) itemTag.get(LINKED_BLOCKS);
+            ListTag list = (ListTag) itemTag.get(LINKED_BLOCKS);
             if (list != null) {
-                tooltip(tooltip, "lt.linkedpos",
-                        list.stream().map(tag -> toBlockPos((IntArrayTag) tag, LINKED_BLOCKS))
-                                .collect(Collectors.toList()));
+                list.stream().map(tag -> toBlockPos((IntArrayTag) tag, LINKED_BLOCKS).get())
+                        .forEach(pos -> {
+                            tooltip.accept(Component.translatable("lt.linkedpos",
+                                    Component.literal(String.valueOf(pos.getX())),
+                                    Component.literal(String.valueOf(pos.getY())),
+                                    Component.literal(String.valueOf(pos.getZ()))));
+                        });
                 return;
             }
         }
