@@ -3,7 +3,6 @@ package com.troblecodings.linkableapi;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
-import java.util.stream.Collectors;
 
 import com.google.common.base.Predicate;
 import com.troblecodings.tcredstone.TCRedstoneMain;
@@ -35,8 +34,8 @@ public class MultiLinkingTool extends Linkingtool {
     }
 
     public MultiLinkingTool(final Settings settings, final ItemGroups tab,
-            final BiPredicate<World, BlockPos> predicate,
-            final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
+            final BiPredicate<World, BlockPos> predicate, final Predicate<BlockEntity> predicateSet,
+            final TaggableFunction function) {
         super(settings, tab, predicate, predicateSet, function);
     }
 
@@ -80,32 +79,31 @@ public class MultiLinkingTool extends Linkingtool {
                 message(player, "lt.reset");
                 stack.damage(1, player, EquipmentSlot.MAINHAND);
                 return ActionResult.FAIL;
-            } else {
-                if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
-                    NbtList list = (NbtList) itemTag.get(LINKED_BLOCKS);
-                    if (list == null) {
-                        list = new NbtList();
-                    }
-                    final NbtElement posTag = NbtHelper.fromBlockPos(pos);
-                    if (list.contains(posTag)) {
-                        message(player, "lt.setpos.msg");
-                        return ActionResult.FAIL;
-                    }
-                    list.add(NbtHelper.fromBlockPos(pos));
-                    tagFromFunction.test(levelIn, pos, list);
-                    itemTag.put(LINKED_BLOCKS, list);
-                    stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
-                    message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+            }
+            if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
+                NbtList list = (NbtList) itemTag.get(LINKED_BLOCKS);
+                if (list == null) {
+                    list = new NbtList();
+                }
+                final NbtElement posTag = NbtHelper.fromBlockPos(pos);
+                if (list.contains(posTag)) {
                     message(player, "lt.setpos.msg");
-                    return ActionResult.SUCCESS;
+                    return ActionResult.FAIL;
                 }
-                if (controller.hasLink() && controller.unlink()) {
-                    message(player, "lt.unlink");
-                    return ActionResult.SUCCESS;
-                }
+                list.add(NbtHelper.fromBlockPos(pos));
+                tagFromFunction.test(levelIn, pos, list);
+                itemTag.put(LINKED_BLOCKS, list);
+                stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
+                message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+                message(player, "lt.setpos.msg");
+                return ActionResult.SUCCESS;
+            }
+            if (controller.hasLink() && controller.unlink()) {
+                message(player, "lt.unlink");
             }
             return ActionResult.SUCCESS;
-        } else if (predicate.test(levelIn, pos)) {
+        }
+        if (predicate.test(levelIn, pos)) {
             NbtList list = (NbtList) itemTag.get(LINKED_BLOCKS);
             if (list == null) {
                 list = new NbtList();
@@ -122,7 +120,8 @@ public class MultiLinkingTool extends Linkingtool {
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return ActionResult.SUCCESS;
-        } else if (player.isSneaking()) {
+        }
+        if (player.isSneaking()) {
             removeToolTag(stack);
             message(player, "lt.reset");
             return ActionResult.SUCCESS;
@@ -141,16 +140,21 @@ public class MultiLinkingTool extends Linkingtool {
                 : Optional.empty();
     }
 
+    // TODO maybe this isn't correct
     @Override
     public void appendTooltip(final ItemStack stack, final TooltipContext context,
             final List<Text> tooltip, final TooltipType type) {
         final NbtCompound itemTag = getOrCreateNbt(stack);
         if (itemTag.contains(LINKED_BLOCKS)) {
-            final NbtList list = (NbtList) itemTag.get(LINKED_BLOCKS);
+            NbtList list = (NbtList) itemTag.get(LINKED_BLOCKS);
             if (list != null) {
-                tooltip(tooltip, "lt.linkedpos",
-                        list.stream().map(tag -> toBlockPos((NbtIntArray) tag, LINKED_BLOCKS))
-                                .collect(Collectors.toList()));
+                list.stream().map(tag -> toBlockPos((NbtIntArray) tag, LINKED_BLOCKS).get())
+                        .forEach(pos -> {
+                            tooltip.add(Text.translatable("lt.linkedpos",
+                                    Text.literal(String.valueOf(pos.getX())),
+                                    Text.literal(String.valueOf(pos.getY())),
+                                    Text.literal(String.valueOf(pos.getZ()))));
+                        });
                 return;
             }
         }
