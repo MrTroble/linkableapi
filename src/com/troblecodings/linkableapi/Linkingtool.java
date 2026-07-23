@@ -5,7 +5,7 @@ import java.util.Optional;
 import java.util.function.BiPredicate;
 
 import com.google.common.base.Predicate;
-import com.troblecodings.tcredstone.GIRCRedstoneMain;
+import com.troblecodings.tcredstone.TCRedstoneMain;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -103,7 +103,7 @@ public class Linkingtool extends Item implements Message {
                     final Tag newToolTag = NbtUtils.writeBlockPos(pos);
                     tagFromFunction.test(levelIn, pos, newToolTag);
                     itemTag.put(LINKINGTOOL_TAG, newToolTag);
-                    stack.set(GIRCRedstoneMain.COMPOUND_DATA, itemTag);
+                    stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
                     message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
                     message(player, "lt.setpos.msg");
                     return InteractionResult.SUCCESS;
@@ -122,7 +122,7 @@ public class Linkingtool extends Item implements Message {
             final Tag newToolTag = NbtUtils.writeBlockPos(pos);
             tagFromFunction.test(levelIn, pos, newToolTag);
             itemTag.put(LINKINGTOOL_TAG, newToolTag);
-            stack.set(GIRCRedstoneMain.COMPOUND_DATA, itemTag);
+            stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return InteractionResult.SUCCESS;
@@ -135,14 +135,14 @@ public class Linkingtool extends Item implements Message {
     }
 
     public void removeToolTag(final ItemStack stack) {
-        stack.remove(GIRCRedstoneMain.COMPOUND_DATA);
+        stack.remove(TCRedstoneMain.COMPOUND_DATA);
     }
 
     protected static CompoundTag getOrCreateForStack(final ItemStack stack) {
-        CompoundTag tag = stack.get(GIRCRedstoneMain.COMPOUND_DATA);
+        CompoundTag tag = stack.get(TCRedstoneMain.COMPOUND_DATA);
         if (tag == null) {
             tag = new CompoundTag();
-            stack.set(GIRCRedstoneMain.COMPOUND_DATA, tag);
+            stack.set(TCRedstoneMain.COMPOUND_DATA, tag);
         }
         return tag;
     }

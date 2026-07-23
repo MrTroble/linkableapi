@@ -5,7 +5,7 @@ import java.util.Optional;
 import java.util.function.BiPredicate;
 
 import com.google.common.base.Predicate;
-import com.troblecodings.tcredstone.GIRCRedstoneMain;
+import com.troblecodings.tcredstone.TCRedstoneMain;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -90,7 +90,7 @@ public class MultiLinkingTool extends Linkingtool implements Message {
                     tagList.add(NbtUtils.writeBlockPos(pos));
                     tagFromFunction.test(levelIn, pos, tagList);
                     itemTag.put(LINKED_BLOCKS, tagList);
-                    stack.set(GIRCRedstoneMain.COMPOUND_DATA, itemTag);
+                    stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
                     message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
                     message(player, "lt.setpos.msg");
                     return InteractionResult.SUCCESS;
@@ -114,7 +114,7 @@ public class MultiLinkingTool extends Linkingtool implements Message {
             tagList.add(posTag);
             tagFromFunction.test(levelIn, pos, tagList);
             itemTag.put(LINKED_BLOCKS, tagList);
-            stack.set(GIRCRedstoneMain.COMPOUND_DATA, itemTag);
+            stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return InteractionResult.SUCCESS;
@@ -129,7 +129,7 @@ public class MultiLinkingTool extends Linkingtool implements Message {
 
     @Override
     public void removeToolTag(final ItemStack stack) {
-        stack.remove(GIRCRedstoneMain.COMPOUND_DATA);
+        stack.remove(TCRedstoneMain.COMPOUND_DATA);
     }
 
     public static Optional<BlockPos> readBlockPos(final IntArrayTag tag, final String string) {
