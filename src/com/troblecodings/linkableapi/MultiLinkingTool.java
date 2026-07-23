@@ -5,10 +5,10 @@ import java.util.Optional;
 import java.util.function.BiPredicate;
 
 import com.google.common.base.Predicate;
-import com.troblecodings.tcredstone.TCRedstoneMain;
 
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.item.TooltipType;
+import net.minecraft.component.DataComponentType;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemGroups;
@@ -28,18 +28,20 @@ public class MultiLinkingTool extends Linkingtool {
 
     private static final String LINKED_BLOCKS = "linkedBlocks";
 
-    public MultiLinkingTool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate) {
-        super(tab, predicate);
+    public MultiLinkingTool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate,
+            final DataComponentType<NbtCompound> data) {
+        super(tab, predicate, data);
     }
 
     public MultiLinkingTool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate,
-            final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
-        super(tab, predicate, predicateSet, function);
+            final Predicate<BlockEntity> predicateSet, final TaggableFunction function,
+            final DataComponentType<NbtCompound> data) {
+        super(tab, predicate, predicateSet, function, data);
     }
 
     public MultiLinkingTool(final ItemGroups tab, final BiPredicate<World, BlockPos> predicate,
-            final Predicate<BlockEntity> predicateSet) {
-        super(tab, predicate, predicateSet);
+            final Predicate<BlockEntity> predicateSet, final DataComponentType<NbtCompound> data) {
+        super(tab, predicate, predicateSet, data);
     }
 
     @Override
@@ -90,7 +92,7 @@ public class MultiLinkingTool extends Linkingtool {
                     list.add(posTag);
                     tagFromFunction.test(levelIn, pos, list);
                     itemTag.put(LINKED_BLOCKS, list);
-                    stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
+                    stack.set(compoundData, itemTag);
                     message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
                     message(player, "lt.setpos.msg");
                     return ActionResult.SUCCESS;
@@ -114,7 +116,7 @@ public class MultiLinkingTool extends Linkingtool {
             list.add(NbtHelper.fromBlockPos(pos));
             tagFromFunction.test(levelIn, pos, list);
             itemTag.put(LINKED_BLOCKS, list);
-            stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
+            stack.set(compoundData, itemTag);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return ActionResult.SUCCESS;
@@ -129,7 +131,7 @@ public class MultiLinkingTool extends Linkingtool {
 
     @Override
     public void removeToolTag(final ItemStack stack) {
-        stack.remove(TCRedstoneMain.COMPOUND_DATA);
+        stack.remove(compoundData);
     }
 
     public static Optional<BlockPos> toBlockPos(final NbtIntArray tag, final String string) {
