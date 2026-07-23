@@ -8,6 +8,7 @@ import com.google.common.base.Predicate;
 import com.troblecodings.tcredstone.TCRedstoneMain;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.ListTag;
@@ -30,20 +31,20 @@ public class MultiLinkingTool extends Linkingtool {
     private static final String LINKED_BLOCKS = "linkedBlocks";
 
     public MultiLinkingTool(final Properties properties, final CreativeModeTab tab,
-            final BiPredicate<Level, BlockPos> predicate) {
-        super(properties, tab, predicate);
+            final BiPredicate<Level, BlockPos> predicate, final DataComponentType<CompoundTag> data) {
+        super(properties, tab, predicate, data);
     }
 
     public MultiLinkingTool(final Properties properties, final CreativeModeTab tab,
             final BiPredicate<Level, BlockPos> predicate, final Predicate<BlockEntity> predicateSet,
-            final TaggableFunction function) {
-        super(properties, tab, predicate, predicateSet, function);
+            final TaggableFunction function, final DataComponentType<CompoundTag> data) {
+        super(properties, tab, predicate, predicateSet, function, data);
     }
 
     public MultiLinkingTool(final Properties properties, final CreativeModeTab tab,
-            final BiPredicate<Level, BlockPos> predicate,
-            final Predicate<BlockEntity> predicateSet) {
-        super(properties, tab, predicate, predicateSet);
+            final BiPredicate<Level, BlockPos> predicate, final Predicate<BlockEntity> predicateSet,
+            final DataComponentType<CompoundTag> data) {
+        super(properties, tab, predicate, predicateSet, data);
     }
 
     @Override

@@ -5,9 +5,9 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
 import com.google.common.base.Predicate;
-import com.troblecodings.tcredstone.TCRedstoneMain;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.Tag;
@@ -28,6 +28,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 public class Linkingtool extends Item implements Message {
 
     protected static final String LINKINGTOOL_TAG = "linkingToolTag";
+    public DataComponentType<CompoundTag> compounData;
 
     protected final BiPredicate<Level, BlockPos> predicate;
     protected final Predicate<BlockEntity> predicateSet;
@@ -35,25 +36,26 @@ public class Linkingtool extends Item implements Message {
     protected final TaggableFunction tagFromFunction;
 
     public Linkingtool(final Properties properties, final CreativeModeTab tab,
-            final BiPredicate<Level, BlockPos> predicate) {
-        this(properties, tab, predicate, _u -> true);
+            final BiPredicate<Level, BlockPos> predicate, final DataComponentType<CompoundTag> data) {
+        this(properties, tab, predicate, _u -> true, data);
     }
 
     public Linkingtool(final Properties properties, final CreativeModeTab tab,
-            final BiPredicate<Level, BlockPos> predicate,
-            final Predicate<BlockEntity> predicateSet) {
+            final BiPredicate<Level, BlockPos> predicate, final Predicate<BlockEntity> predicateSet,
+            final DataComponentType<CompoundTag> data) {
         this(properties, tab, predicate, predicateSet, (_u1, _u2, _u3) -> {
-        });
+        }, data);
     }
 
     public Linkingtool(final Properties properties, final CreativeModeTab tab,
-            final BiPredicate<Level, BlockPos> predicate,
-            final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
+            final BiPredicate<Level, BlockPos> predicate, final Predicate<BlockEntity> predicateSet,
+            final TaggableFunction function, final DataComponentType<CompoundTag> data) {
         super(properties.durability(64));
         this.predicate = predicate;
         this.predicateSet = predicateSet;
         this.tab = tab;
         this.tagFromFunction = function;
+        this.compounData = data;
     }
 
     @Override
@@ -87,27 +89,26 @@ public class Linkingtool extends Item implements Message {
                 message(player, "lt.notlinked");
                 message(player, "lt.notlinked.msg");
                 return InteractionResult.FAIL;
-            } else {
-                if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
-                    if (itemTag.contains(LINKINGTOOL_TAG)) {
-                        message(player, "lt.setpos.msg");
-                        return InteractionResult.FAIL;
-                    }
-                    final Tag newToolTag = writeBlockPos(pos);
-                    tagFromFunction.test(levelIn, pos, newToolTag);
-                    itemTag.put(LINKINGTOOL_TAG, newToolTag);
-                    stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
-                    message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+            }
+            if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
+                if (itemTag.contains(LINKINGTOOL_TAG)) {
                     message(player, "lt.setpos.msg");
-                    return InteractionResult.SUCCESS;
+                    return InteractionResult.FAIL;
                 }
-                if (controller.hasLink() && controller.unlink()) {
-                    message(player, "lt.unlink");
-                    return InteractionResult.SUCCESS;
-                }
+                final Tag newToolTag = writeBlockPos(pos);
+                tagFromFunction.test(levelIn, pos, newToolTag);
+                itemTag.put(LINKINGTOOL_TAG, newToolTag);
+                stack.set(compounData, itemTag);
+                message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+                message(player, "lt.setpos.msg");
+                return InteractionResult.SUCCESS;
+            }
+            if (controller.hasLink() && controller.unlink()) {
+                message(player, "lt.unlink");
             }
             return InteractionResult.SUCCESS;
-        } else if (predicate.test(levelIn, pos)) {
+        }
+        if (predicate.test(levelIn, pos)) {
             if (itemTag.contains(LINKINGTOOL_TAG)) {
                 message(player, "lt.setpos.msg");
                 return InteractionResult.FAIL;
@@ -115,11 +116,12 @@ public class Linkingtool extends Item implements Message {
             final Tag newToolTag = writeBlockPos(pos);
             tagFromFunction.test(levelIn, pos, newToolTag);
             itemTag.put(LINKINGTOOL_TAG, newToolTag);
-            stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
+            stack.set(compounData, itemTag);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return InteractionResult.SUCCESS;
-        } else if (player.isShiftKeyDown()) {
+        }
+        if (player.isShiftKeyDown()) {
             removeToolTag(stack);
             message(player, "lt.reset");
             return InteractionResult.SUCCESS;
@@ -128,14 +130,14 @@ public class Linkingtool extends Item implements Message {
     }
 
     public void removeToolTag(final ItemStack stack) {
-        stack.remove(TCRedstoneMain.COMPOUND_DATA);
+        stack.remove(compounData);
     }
 
-    protected static CompoundTag getOrCreateNbt(final ItemStack stack) {
-        CompoundTag nbt = stack.get(TCRedstoneMain.COMPOUND_DATA);
+    protected CompoundTag getOrCreateNbt(final ItemStack stack) {
+        CompoundTag nbt = stack.get(compounData);
         if (nbt == null) {
             nbt = new CompoundTag();
-            stack.set(TCRedstoneMain.COMPOUND_DATA, nbt);
+            stack.set(compounData, nbt);
         }
         return nbt;
     }
@@ -161,16 +163,17 @@ public class Linkingtool extends Item implements Message {
     }
 
     public static Tag writeBlockPos(final BlockPos pos) {
-        return new IntArrayTag(new int[] { pos.getX(), pos.getY(), pos.getZ() });
+        return new IntArrayTag(new int[] {
+                pos.getX(), pos.getY(), pos.getZ()
+        });
     }
 
     public static Optional<BlockPos> readBlockPos(final CompoundTag tag, final String key) {
         final Tag posTag = tag.get(key);
         if (posTag instanceof IntArrayTag intArray) {
             final int[] aint = intArray.getAsIntArray();
-            if (aint.length == 3) {
+            if (aint.length == 3)
                 return Optional.of(new BlockPos(aint[0], aint[1], aint[2]));
-            }
         }
         return Optional.empty();
     }
