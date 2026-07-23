@@ -5,9 +5,9 @@ import java.util.Optional;
 import java.util.function.BiPredicate;
 
 import com.google.common.base.Predicate;
-import com.troblecodings.tcredstone.TCRedstoneMain;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
@@ -28,24 +28,27 @@ import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 public class Linkingtool extends Item implements Message {
 
     protected static final String LINKINGTOOL_TAG = "linkingToolTag";
+    public DataComponentType<CompoundTag> compoundData;
 
     protected final BiPredicate<Level, BlockPos> predicate;
     protected final Predicate<BlockEntity> predicateSet;
     protected final CreativeModeTab tab;
     protected final TaggableFunction tagFromFunction;
 
-    public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate) {
-        this(tab, predicate, _u -> true);
+    public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
+            final DataComponentType<CompoundTag> data) {
+        this(tab, predicate, _u -> true, data);
     }
 
     public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
-            final Predicate<BlockEntity> predicateSet) {
+            final Predicate<BlockEntity> predicateSet, final DataComponentType<CompoundTag> data) {
         this(tab, predicate, predicateSet, (_u1, _u2, _u3) -> {
-        });
+        }, data);
     }
 
     public Linkingtool(final CreativeModeTab tab, final BiPredicate<Level, BlockPos> predicate,
-            final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
+            final Predicate<BlockEntity> predicateSet, final TaggableFunction function,
+            final DataComponentType<CompoundTag> data) {
         super(new Properties().durability(64));
         this.predicate = predicate;
         this.predicateSet = predicateSet;
@@ -57,6 +60,7 @@ public class Linkingtool extends Item implements Message {
             }
         }
         this.tagFromFunction = function;
+        this.compoundData = data;
     }
 
     private void onTab(final BuildCreativeModeTabContentsEvent ev) {
@@ -94,27 +98,26 @@ public class Linkingtool extends Item implements Message {
                 message(player, "lt.notlinked");
                 message(player, "lt.notlinked.msg");
                 return InteractionResult.FAIL;
-            } else {
-                if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
-                    if (itemTag.contains(LINKINGTOOL_TAG)) {
-                        message(player, "lt.setpos.msg");
-                        return InteractionResult.FAIL;
-                    }
-                    final Tag newToolTag = NbtUtils.writeBlockPos(pos);
-                    tagFromFunction.test(levelIn, pos, newToolTag);
-                    itemTag.put(LINKINGTOOL_TAG, newToolTag);
-                    stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
-                    message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+            }
+            if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
+                if (itemTag.contains(LINKINGTOOL_TAG)) {
                     message(player, "lt.setpos.msg");
-                    return InteractionResult.SUCCESS;
+                    return InteractionResult.FAIL;
                 }
-                if (controller.hasLink() && controller.unlink()) {
-                    message(player, "lt.unlink");
-                    return InteractionResult.SUCCESS;
-                }
+                final Tag newToolTag = NbtUtils.writeBlockPos(pos);
+                tagFromFunction.test(levelIn, pos, newToolTag);
+                itemTag.put(LINKINGTOOL_TAG, newToolTag);
+                stack.set(compoundData, itemTag);
+                message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+                message(player, "lt.setpos.msg");
+                return InteractionResult.SUCCESS;
+            }
+            if (controller.hasLink() && controller.unlink()) {
+                message(player, "lt.unlink");
             }
             return InteractionResult.SUCCESS;
-        } else if (predicate.test(levelIn, pos)) {
+        }
+        if (predicate.test(levelIn, pos)) {
             if (itemTag.contains(LINKINGTOOL_TAG)) {
                 message(player, "lt.setpos.msg");
                 return InteractionResult.FAIL;
@@ -122,11 +125,12 @@ public class Linkingtool extends Item implements Message {
             final Tag newToolTag = NbtUtils.writeBlockPos(pos);
             tagFromFunction.test(levelIn, pos, newToolTag);
             itemTag.put(LINKINGTOOL_TAG, newToolTag);
-            stack.set(TCRedstoneMain.COMPOUND_DATA, itemTag);
+            stack.set(compoundData, itemTag);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return InteractionResult.SUCCESS;
-        } else if (player.isShiftKeyDown()) {
+        }
+        if (player.isShiftKeyDown()) {
             removeToolTag(stack);
             message(player, "lt.reset");
             return InteractionResult.SUCCESS;
@@ -135,14 +139,14 @@ public class Linkingtool extends Item implements Message {
     }
 
     public void removeToolTag(final ItemStack stack) {
-        stack.remove(TCRedstoneMain.COMPOUND_DATA);
+        stack.remove(compoundData);
     }
 
-    protected static CompoundTag getOrCreateForStack(final ItemStack stack) {
-        CompoundTag tag = stack.get(TCRedstoneMain.COMPOUND_DATA);
+    protected CompoundTag getOrCreateForStack(final ItemStack stack) {
+        CompoundTag tag = stack.get(compoundData);
         if (tag == null) {
             tag = new CompoundTag();
-            stack.set(TCRedstoneMain.COMPOUND_DATA, tag);
+            stack.set(compoundData, tag);
         }
         return tag;
     }
