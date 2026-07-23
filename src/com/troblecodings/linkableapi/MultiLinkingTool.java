@@ -6,9 +6,9 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.google.common.base.Predicate;
-import com.troblecodings.tcredstone.GIRCRedstoneMain;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.ListTag;
@@ -30,20 +30,20 @@ public class MultiLinkingTool extends Linkingtool implements Message {
     // private static final String MULTILINKINGTOOL_TAG = "multiLinkingToolTag";
 
     public MultiLinkingTool(final Properties properties, final CreativeModeTab tab,
-            final BiPredicate<Level, BlockPos> predicate) {
-        super(properties, tab, predicate);
+            final BiPredicate<Level, BlockPos> predicate, final DataComponentType<CompoundTag> data) {
+        super(properties, tab, predicate, data);
     }
 
     public MultiLinkingTool(final Properties properties, final CreativeModeTab tab,
-            final BiPredicate<Level, BlockPos> predicate,
-            final Predicate<BlockEntity> predicateSet, final TaggableFunction function) {
-        super(properties, tab, predicate, predicateSet, function);
+            final BiPredicate<Level, BlockPos> predicate, final Predicate<BlockEntity> predicateSet,
+            final TaggableFunction function, final DataComponentType<CompoundTag> data) {
+        super(properties, tab, predicate, predicateSet, function, data);
     }
 
     public MultiLinkingTool(final Properties properties, final CreativeModeTab tab,
-            final BiPredicate<Level, BlockPos> predicate,
-            final Predicate<BlockEntity> predicateSet) {
-        super(properties, tab, predicate, predicateSet);
+            final BiPredicate<Level, BlockPos> predicate, final Predicate<BlockEntity> predicateSet,
+            final DataComponentType<CompoundTag> data) {
+        super(properties, tab, predicate, predicateSet, data);
     }
 
     @Override
@@ -79,7 +79,6 @@ public class MultiLinkingTool extends Linkingtool implements Message {
                 removeToolTag(stack);
                 message(player, "lt.reset");
                 stack.hurtAndBreak(list.size(), player, getEquipmentSlot(stack));
-                return InteractionResult.SUCCESS;
             } else {
                 if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
                     ListTag tagList = (ListTag) itemTag.get(LINKED_BLOCKS);
@@ -94,18 +93,18 @@ public class MultiLinkingTool extends Linkingtool implements Message {
                     tagList.add(writeBlockPos(pos));
                     tagFromFunction.test(levelIn, pos, tagList);
                     itemTag.put(LINKED_BLOCKS, tagList);
-                    stack.set(GIRCRedstoneMain.COMPOUND_DATA, itemTag);
+                    stack.set(compoundData, itemTag);
                     message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
                     message(player, "lt.setpos.msg");
                     return InteractionResult.SUCCESS;
                 }
                 if (controller.hasLink() && controller.unlink()) {
                     message(player, "lt.unlink");
-                    return InteractionResult.SUCCESS;
                 }
             }
             return InteractionResult.SUCCESS;
-        } else if (predicate.test(levelIn, pos)) {
+        }
+        if (predicate.test(levelIn, pos)) {
             ListTag tagList = (ListTag) itemTag.get(LINKED_BLOCKS);
             if (tagList == null) {
                 tagList = new ListTag();
@@ -118,11 +117,12 @@ public class MultiLinkingTool extends Linkingtool implements Message {
             tagList.add(posTag);
             tagFromFunction.test(levelIn, pos, tagList);
             itemTag.put(LINKED_BLOCKS, tagList);
-            stack.set(GIRCRedstoneMain.COMPOUND_DATA, itemTag);
+            stack.set(compoundData, itemTag);
             message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
             message(player, "lt.setpos.msg");
             return InteractionResult.SUCCESS;
-        } else if (player.isShiftKeyDown()) {
+        }
+        if (player.isShiftKeyDown()) {
             removeToolTag(stack);
             message(player, "lt.reset");
             return InteractionResult.SUCCESS;
@@ -132,7 +132,7 @@ public class MultiLinkingTool extends Linkingtool implements Message {
 
     @Override
     public void removeToolTag(final ItemStack stack) {
-        stack.remove(GIRCRedstoneMain.COMPOUND_DATA);
+        stack.remove(compoundData);
     }
 
     public static Optional<BlockPos> readBlockPos(final IntArrayTag tag, final String string) {
