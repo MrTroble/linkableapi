@@ -30,7 +30,8 @@ public class MultiLinkingTool extends Linkingtool implements Message {
     private static final String LINKED_BLOCKS = "linkedBlocks";
 
     public MultiLinkingTool(final Properties properties, final CreativeModeTab tab,
-            final BiPredicate<Level, BlockPos> predicate, final DataComponentType<CompoundTag> data) {
+            final BiPredicate<Level, BlockPos> predicate,
+            final DataComponentType<CompoundTag> data) {
         super(properties, tab, predicate, data);
     }
 
@@ -81,28 +82,27 @@ public class MultiLinkingTool extends Linkingtool implements Message {
                 stack.hurtAndBreak(list.size(), (ServerLevel) levelIn, player, item -> {
                 });
                 return InteractionResult.SUCCESS;
-            } else {
-                if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
-                    ListTag tagList = (ListTag) itemTag.get(LINKED_BLOCKS);
-                    if (tagList == null) {
-                        tagList = new ListTag();
-                    }
-                    final Tag posTag = writeBlockPos(pos);
-                    if (tagList.contains(posTag)) {
-                        message(player, "lt.setpos.msg");
-                        return InteractionResult.FAIL;
-                    }
-                    tagList.add(writeBlockPos(pos));
-                    tagFromFunction.test(levelIn, pos, tagList);
-                    itemTag.put(LINKED_BLOCKS, tagList);
-                    stack.set(compoundData, itemTag);
-                    message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+            }
+            if (controller.canBeLinked() && predicate.test(levelIn, pos)) {
+                ListTag tagList = (ListTag) itemTag.get(LINKED_BLOCKS);
+                if (tagList == null) {
+                    tagList = new ListTag();
+                }
+                final Tag posTag = writeBlockPos(pos);
+                if (tagList.contains(posTag)) {
                     message(player, "lt.setpos.msg");
-                    return InteractionResult.SUCCESS;
+                    return InteractionResult.FAIL;
                 }
-                if (controller.hasLink() && controller.unlink()) {
-                    message(player, "lt.unlink");
-                }
+                tagList.add(writeBlockPos(pos));
+                tagFromFunction.test(levelIn, pos, tagList);
+                itemTag.put(LINKED_BLOCKS, tagList);
+                stack.set(compoundData, itemTag);
+                message(player, "lt.setpos", pos.getX(), pos.getY(), pos.getZ());
+                message(player, "lt.setpos.msg");
+                return InteractionResult.SUCCESS;
+            }
+            if (controller.hasLink() && controller.unlink()) {
+                message(player, "lt.unlink");
             }
             return InteractionResult.SUCCESS;
         }

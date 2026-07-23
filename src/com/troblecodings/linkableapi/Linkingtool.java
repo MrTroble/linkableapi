@@ -38,7 +38,8 @@ public class Linkingtool extends Item implements Message {
     protected final TaggableFunction tagFromFunction;
 
     public Linkingtool(final Properties properties, final CreativeModeTab tab,
-            final BiPredicate<Level, BlockPos> predicate, final DataComponentType<CompoundTag> data) {
+            final BiPredicate<Level, BlockPos> predicate,
+            final DataComponentType<CompoundTag> data) {
         this(properties, tab, predicate, _u -> true, data);
     }
 
@@ -176,16 +177,17 @@ public class Linkingtool extends Item implements Message {
     }
 
     public static Tag writeBlockPos(final BlockPos pos) {
-        return new IntArrayTag(new int[] { pos.getX(), pos.getY(), pos.getZ() });
+        return new IntArrayTag(new int[] {
+                pos.getX(), pos.getY(), pos.getZ()
+        });
     }
 
     public static Optional<BlockPos> readBlockPos(final CompoundTag tag, final String key) {
         final Tag posTag = tag.get(key);
         if (posTag instanceof IntArrayTag intArray) {
             final int[] aint = intArray.getAsIntArray();
-            if (aint.length == 3) {
+            if (aint.length == 3)
                 return Optional.of(new BlockPos(aint[0], aint[1], aint[2]));
-            }
         }
         return Optional.empty();
     }
